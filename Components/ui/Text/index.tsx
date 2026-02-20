@@ -8,17 +8,26 @@ type ElementType =
   | "h5"
   | "h6"
   | "label";
-type TextProps = {
-  as?: ElementType;
+
+type TextProps<T extends ElementType> = {
+  as?: T;
   children: React.ReactNode;
   className?: string;
   stl?: React.CSSProperties;
-} & React.HTMLAttributes<HTMLElement>;
-export default function Text({children,as="p",className ,stl}:TextProps) {
-     const Component = as;
-     return (
-        <Component className={className} style={stl}>
-            {children}
-        </Component>
-     )
-};
+} & React.ComponentPropsWithoutRef<T>;
+
+export default function Text<T extends ElementType = "p">({
+  children,
+  as,
+  className,
+  stl,
+  ...rest
+}: TextProps<T>) {
+  const Component = as || "p";
+
+  return (
+    <Component className={className} style={stl} {...rest}>
+      {children}
+    </Component>
+  );
+}
