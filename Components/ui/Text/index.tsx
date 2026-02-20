@@ -1,32 +1,22 @@
-type ElementType =
-  | "p"
-  | "span"
-  | "h1"
-  | "h2"
-  | "h3"
-  | "h4"
-  | "h5"
-  | "h6"
-  | "label";
+import React from "react";
+import clsx from "clsx";
 
-type TextProps<T extends ElementType> = {
+type TextProps<T extends React.ElementType> = {
   as?: T;
-  children: React.ReactNode;
   className?: string;
-  stl?: React.CSSProperties;
+  children?: React.ReactNode;
 } & React.ComponentPropsWithoutRef<T>;
 
-export default function Text<T extends ElementType = "p">({
-  children,
+export default function Text<T extends React.ElementType = "p">({
   as,
   className,
-  stl,
+  children,
   ...rest
 }: TextProps<T>) {
   const Component = as || "p";
 
   return (
-    <Component className={className} style={stl} {...rest}>
+    <Component className={clsx(className)} {...rest}>
       {children}
     </Component>
   );
