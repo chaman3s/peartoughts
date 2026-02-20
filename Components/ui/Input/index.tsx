@@ -1,12 +1,21 @@
-type InputProps={
-ty:string,
-alt:string,
-className:string,
-stl:React.CSSProperties;
-plcHolder:string;
-}& React.HTMLAttributes<HTMLElement>;
-export default function Input({ty,alt,className,stl,plcHolder,...props}:InputProps) {
-    return (
-        <input type={ty} alt={alt} className={className} style={stl} placeholder={plcHolder} {...props}/>
-    )
+import clsx from "clsx";
+
+type InputProps = React.InputHTMLAttributes<HTMLInputElement> & {
+  rounded?: boolean;
 };
+
+export default function Input({
+  className,
+  rounded,
+  ...props
+}: InputProps) {
+  return (
+    <input
+      className={clsx(
+        rounded && "rounded-full",
+        className
+      )}
+      {...props}
+    />
+  );
+}

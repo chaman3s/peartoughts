@@ -47,7 +47,7 @@ export default function LoginForm({ error }: { error?: string }) {
 
           {/* Button Section */}
           <button
-            className="w-full px-4 py-2 sm:py-3 md:py-4 text-base sm:text-xl md:text-2xl font-bold text-white bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-300 transform hover:scale-105 active:scale-95 shadow-md hover:shadow-lg animate-fadeInUp"
+            className="w-full px-4 py-2 sm:py-3 md:py-4 text-sm sm:text-base font-semibold text-white bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-300 transform hover:scale-105 active:scale-95 shadow-md hover:shadow-lg animate-fadeInUp"
             style={{ animationDelay: "0.2s" }}
           >
             Login
