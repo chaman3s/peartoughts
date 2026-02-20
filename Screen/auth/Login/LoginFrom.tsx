@@ -38,7 +38,7 @@ export default function LoginForm({ error }: { error?: string }) {
     if (!response?.success) return;
 
     setFormData({ emailOrMobile: "" });
-    router.push("/dashBoard");
+    router.push("/otpverification");
   };
 
   return (
