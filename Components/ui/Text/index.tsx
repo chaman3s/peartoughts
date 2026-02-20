@@ -13,7 +13,7 @@ type TextProps = {
   children: React.ReactNode;
   className?: string;
   stl?: React.CSSProperties;
-} & React.HTMLAttributes<HTMLElement>;;
+} & React.HTMLAttributes<HTMLElement>;
 export default function Text({children,as="p",className ,stl}:TextProps) {
      const Component = as;
      return (

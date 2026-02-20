@@ -3,6 +3,7 @@ import clsx from "clsx";
 
 type Props = ImageProps & {
   rounded?: boolean;
+  
 };
 
 export default function Image({
