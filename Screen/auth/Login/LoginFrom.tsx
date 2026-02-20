@@ -16,13 +16,12 @@ export default function LoginForm({ error }: { error?: string }) {
   const router = useRouter();
   const [formData, setFormData] = useState({
     emailOrMobile: "",
-    password: "",
   });
   const [formError, setFormError] = useState("");
 
   const loginApi = useApiCall(loginMockApi);
 
-  const handleInputChange = (key: "emailOrMobile" | "password", value: string) => {
+  const handleInputChange = (key: "emailOrMobile", value: string) => {
     setFormData((prev) => ({ ...prev, [key]: value }));
   };
 
@@ -30,15 +29,15 @@ export default function LoginForm({ error }: { error?: string }) {
     event.preventDefault();
     setFormError("");
 
-    if (!formData.emailOrMobile.trim() || !formData.password.trim()) {
-      setFormError("Enter email/mobile and password");
+    if (!formData.emailOrMobile.trim()) {
+      setFormError("Enter email/mobile");
       return;
     }
 
     const response = await loginApi.execute(formData);
     if (!response?.success) return;
 
-    setFormData({ emailOrMobile: "", password: "" });
+    setFormData({ emailOrMobile: "" });
     router.push("/dashBoard");
   };
 
@@ -76,16 +75,6 @@ export default function LoginForm({ error }: { error?: string }) {
                   onChange: (event) => handleInputChange("emailOrMobile", event.target.value),
                   clearable: true,
                   onClear: () => handleInputChange("emailOrMobile", ""),
-                },
-                {
-                  id: "password",
-                  type: "password",
-                  placeholder: "Enter password",
-                  label :"Password",
-                  value: formData.password,
-                  onChange: (event) => handleInputChange("password", event.target.value),
-                  clearable: true,
-                  onClear: () => handleInputChange("password", ""),
                 },
               ]}
             />

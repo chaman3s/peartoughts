@@ -2,12 +2,10 @@ export type SignupPayload = {
   fullname: string;
   email: string;
   number: string;
-  password: string;
 };
 
 export type LoginPayload = {
   emailOrMobile: string;
-  password: string;
 };
 
 type StoredUser = {
@@ -15,7 +13,6 @@ type StoredUser = {
   fullname: string;
   email: string;
   number: string;
-  password: string;
 };
 
 type PendingOtp = {
@@ -114,7 +111,6 @@ export async function signupMockApi(payload: SignupPayload) {
     fullname: payload.fullname.trim(),
     email,
     number,
-    password: payload.password,
   };
 
   users.push(user);
@@ -138,8 +134,8 @@ export async function loginMockApi(payload: LoginPayload) {
       normalizeMobile(item.number) === normalizedNumber
   );
 
-  if (!user || user.password !== payload.password) {
-    throw new Error("Invalid email/mobile or password");
+  if (!user) {
+    throw new Error("Account not found");
   }
 
   writePendingOtp(user.number || user.email);
