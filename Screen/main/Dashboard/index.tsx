@@ -94,6 +94,7 @@ export default function DashboardScreen() {
   const [activeTag, setActiveTag] = useState<(typeof filterTags)[number]>("All");
   const [searchQuery, setSearchQuery] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const getStars = (rating: string) => "★".repeat(Math.round(Number(rating)));
 
   const filteredDoctors = useMemo(() => {
     if (activeTag === "All") return doctors;
@@ -201,10 +202,15 @@ export default function DashboardScreen() {
               <div className="space-y-3 p-4">
                 <div>
                   <h2 className="text-base font-semibold leading-snug">{doctor.name}</h2>
-                  <p className="mt-1 text-xs text-slate-500">{doctor.experience} experience | Rating {doctor.rating}</p>
+                  <p className="mt-1 text-xs text-slate-500">{doctor.experience} experience</p>
                 </div>
 
                 <p className="text-sm text-slate-600">{doctor.description}</p>
+
+                <div className="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2">
+                  <p className="text-xs font-medium text-slate-500">Rating</p>
+                  <p className="text-sm font-semibold text-amber-500">{getStars(doctor.rating)}</p>
+                </div>
 
                 <div className="flex flex-wrap gap-2">
                   {doctor.tags.map((tag) => (
@@ -214,7 +220,10 @@ export default function DashboardScreen() {
                   ))}
                 </div>
 
-                <Button className="w-full bg-blue-600 text-white hover:bg-blue-700">Book Appointment</Button>
+                <div className="flex gap-2">
+                  <Button className="flex-1 border border-slate-300 bg-white text-slate-800 hover:bg-slate-100">View</Button>
+                  <Button className="flex-1 bg-blue-600 text-white hover:bg-blue-700">Book Appointment</Button>
+                </div>
               </div>
             </Card>
           ))}

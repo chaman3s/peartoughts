@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Button from "@/Components/ui/Button";
 import { Card } from "@/Components/ui/Card";
@@ -8,13 +8,12 @@ import { HorizontalContainer, VerticalContainer } from "@/Components/ui/Containe
 import Input from "@/Components/ui/Input";
 import Text from "@/Components/ui/Text";
 import useApiCall from "@/hooks/useApiCall";
-
-type SignupPayload = {
-  fullname: string;
-  email: string;
-  number: string;
-  password: string;
-};
+import {
+  getPendingOtpContact,
+  resendOtpMockApi,
+  verifyOtpMockApi,
+  type SignupPayload,
+} from "@/services/mockAuthApi";
 
 const STORAGE_KEY = "signup_payload";
 const OTP_LENGTH = 4;
@@ -36,37 +35,34 @@ function maskMobile(number: string) {
   return `+91 ${digits.slice(0, 3)} ******${digits.slice(-2)}`;
 }
 
+function resolveContactText() {
+  if (typeof window === "undefined") return null;
+
+  const pendingContact = getPendingOtpContact();
+  if (pendingContact) return maskMobile(pendingContact);
+
+  const payload = parseSignupPayload(sessionStorage.getItem(STORAGE_KEY));
+  if (payload?.number) return maskMobile(payload.number);
+
+  return null;
+}
+
 export default function OtpVerificationForm() {
   const router = useRouter();
   const [otpValues, setOtpValues] = useState(Array(OTP_LENGTH).fill(""));
   const [activeIndex, setActiveIndex] = useState(0);
   const [secondsLeft, setSecondsLeft] = useState(55);
-  const [contactText, setContactText] = useState("+91 111 ******99");
   const [formError, setFormError] = useState("");
-  const [signupPayload, setSignupPayload] = useState<SignupPayload | null>(null);
   const inputRefs = useRef<Array<HTMLInputElement | null>>([]);
+  const contactText = useMemo(() => resolveContactText(), []);
 
-  const verifyApi = useApiCall(async (otp: string) => {
-    await new Promise((resolve) => setTimeout(resolve, 600));
-    return { success: otp.length === OTP_LENGTH };
-  });
-
-  const resendApi = useApiCall(async () => {
-    await new Promise((resolve) => setTimeout(resolve, 500));
-    return { success: true };
-  });
+  const verifyApi = useApiCall(verifyOtpMockApi);
+  const resendApi = useApiCall(resendOtpMockApi);
 
   useEffect(() => {
-    const payload = parseSignupPayload(sessionStorage.getItem(STORAGE_KEY));
-    if (!payload) {
-      setFormError("Signup data not found. Please sign up again.");
-      router.push("/signup");
-      return;
-    }
-
-    setSignupPayload(payload);
-    setContactText(maskMobile(payload.number));
-  }, [router]);
+    if (contactText) return;
+    router.push("/signup");
+  }, [contactText, router]);
 
   useEffect(() => {
     if (secondsLeft <= 0) return;
@@ -122,7 +118,6 @@ export default function OtpVerificationForm() {
 
   const handleResend = async () => {
     setFormError("");
-    if (!signupPayload) return;
 
     const response = await resendApi.execute();
     if (!response?.success) return;
@@ -146,6 +141,8 @@ export default function OtpVerificationForm() {
       setFormError("Invalid OTP");
       return;
     }
+
+    router.push("/dashBoard");
   };
 
   return (
@@ -161,7 +158,7 @@ export default function OtpVerificationForm() {
 
             <VerticalContainer className="items-center gap-10">
               <Text className="text-[26px] text-[#2f2f2f] text-center leading-tight">
-                Code has been sent to {contactText}
+                Code has been sent to {contactText ?? "+91 111 ******99"}
               </Text>
 
               <HorizontalContainer className="w-full justify-center gap-4">

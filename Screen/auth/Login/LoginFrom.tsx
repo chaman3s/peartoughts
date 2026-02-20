@@ -1,15 +1,52 @@
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Card } from "@/Components/ui/Card";
 import VerticalContainer from "@/Components/ui/Container/VerticalContainer";
 import {LebelFrom} from "@/Components/Form";
+import Button from "@/Components/ui/Button";
+import useApiCall from "@/hooks/useApiCall";
+import { loginMockApi } from "@/services/mockAuthApi";
 import Link from "next/link";
 import Image from '@/Components/ui/Image'
 import logo from '@/assets/img/logo.jpg'
 
 export default function LoginForm({ error }: { error?: string }) {
+  const router = useRouter();
+  const [formData, setFormData] = useState({
+    emailOrMobile: "",
+    password: "",
+  });
+  const [formError, setFormError] = useState("");
+
+  const loginApi = useApiCall(loginMockApi);
+
+  const handleInputChange = (key: "emailOrMobile" | "password", value: string) => {
+    setFormData((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setFormError("");
+
+    if (!formData.emailOrMobile.trim() || !formData.password.trim()) {
+      setFormError("Enter email/mobile and password");
+      return;
+    }
+
+    const response = await loginApi.execute(formData);
+    if (!response?.success) return;
+
+    setFormData({ emailOrMobile: "", password: "" });
+    router.push("/dashBoard");
+  };
+
   return (
     <div className="flex h-[100dvh] items-center justify-center overflow-hidden px-3 sm:px-6 lg:px-8 bg-gradient-to-br from-blue-50 to-indigo-100">
       <Card className="w-full max-w-md animate-slideIn shadow-lg hover:shadow-xl transition-shadow duration-300">
-        <VerticalContainer className="gap-3 sm:gap-4 p-4 sm:p-6">
+        <form onSubmit={handleSubmit}>
+          <VerticalContainer className="gap-3 sm:gap-4 p-4 sm:p-6">
           {/* Logo Section */}
           <div className="text-center animate-fadeIn">
             <Image
@@ -27,32 +64,42 @@ export default function LoginForm({ error }: { error?: string }) {
           <div className="animate-fadeInUp" style={{ animationDelay: "0.1s" }}>
             <LebelFrom
               label={"Login"}
-              error={error}
+              error={formError || loginApi.error || error}
               inputArr={[
 
                 {
                   id: "emailOrMobile",
                   type: "text",
                   placeholder: "Enter email",
-                  label :"Mobile/Email"
+                  label :"Mobile/Email",
+                  value: formData.emailOrMobile,
+                  onChange: (event) => handleInputChange("emailOrMobile", event.target.value),
+                  clearable: true,
+                  onClear: () => handleInputChange("emailOrMobile", ""),
                 },
                 {
                   id: "password",
                   type: "password",
                   placeholder: "Enter password",
-                  label :"Password"
+                  label :"Password",
+                  value: formData.password,
+                  onChange: (event) => handleInputChange("password", event.target.value),
+                  clearable: true,
+                  onClear: () => handleInputChange("password", ""),
                 },
               ]}
             />
           </div>
 
           {/* Button Section */}
-          <button
+          <Button
+            type="submit"
+            loading={loginApi.loading}
             className="w-full px-4 py-2 sm:py-2.5 text-sm sm:text-base font-semibold text-white bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-300 transform hover:scale-105 active:scale-95 shadow-md hover:shadow-lg animate-fadeInUp"
             style={{ animationDelay: "0.2s" }}
           >
             Login
-          </button>
+          </Button>
 
           {/* Footer Links */}
           <div className="flex flex-col gap-1 sm:flex-row sm:gap-0 sm:justify-between items-center text-xs sm:text-sm text-gray-600 animate-fadeInUp" style={{ animationDelay: "0.3s" }}>
@@ -90,7 +137,8 @@ export default function LoginForm({ error }: { error?: string }) {
               Sign up
             </Link>
           </p>
-        </VerticalContainer>
+          </VerticalContainer>
+        </form>
       </Card>
     </div>
   );

@@ -8,6 +8,8 @@ type InputItem =
   | ({
       id?: string;
       label?: string;
+      clearable?: boolean;
+      onClear?: () => void;
     } & React.InputHTMLAttributes<HTMLInputElement>);
 
 type FormProps = {
@@ -42,9 +44,14 @@ export default function LabelForm({
 
         const {
           label: itemLabel,
+          clearable,
+          onClear,
           className: inputClassName,
           ...inputProps
         } = item;
+
+        const hasValue = typeof inputProps.value === "string" && inputProps.value.length > 0;
+        const showClearButton = Boolean(clearable && hasValue && onClear);
 
         return (
           <div key={item.id ?? index} className="space-y-1">
@@ -58,17 +65,31 @@ export default function LabelForm({
               </Text>
             )}
 
-            <Input
-              {...inputProps}
-              className={clsx(
-                "w-full px-4 py-2 rounded-lg border outline-none transition-all",
-                error
-                  ? "border-red-500 focus:ring-red-500"
-                  : "border-gray-300 focus:ring-blue-500",
-                className,
-                inputClassName
+            <div className="relative">
+              <Input
+                {...inputProps}
+                className={clsx(
+                  "w-full px-4 py-2 rounded-lg border outline-none transition-all text-black placeholder:text-gray-400",
+                  showClearButton && "pr-10",
+                  error
+                    ? "border-red-500 focus:ring-red-500"
+                    : "border-gray-300 focus:ring-blue-500",
+                  className,
+                  inputClassName
+                )}
+              />
+
+              {showClearButton && (
+                <button
+                  type="button"
+                  onClick={onClear}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-sm font-semibold text-gray-400 hover:text-gray-600"
+                  aria-label={`Clear ${itemLabel ?? inputProps.id ?? "input"}`}
+                >
+                  x
+                </button>
               )}
-            />
+            </div>
 
             {error && (
               <Text as="p" className="text-sm text-red-500">
