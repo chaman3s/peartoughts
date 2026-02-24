@@ -28,7 +28,7 @@ const menuItems: SideBarItem[] = [
   },
   {
     id: "doctor-detail",
-    label: "Recode",
+    label: "Doctor Detail",
     href: "/dashBoard/DoctorDetail",
     icon: (
       <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden="true">
@@ -65,8 +65,13 @@ export default function SideBar() {
       }`}
     >
       <div className={`sticky top-16 h-[calc(100vh-4rem)] overflow-y-auto py-5 ${isCollapsed ? "px-2" : "px-4"}`}>
+        {!isCollapsed && (
+          <p className="px-3 text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
+            Navigation
+          </p>
+        )}
 
-        <nav className="mt-3 space-y-1">
+        <nav className={`${isCollapsed ? "mt-1" : "mt-3"} space-y-1`}>
           {menuItems.map((item) => {
             const isActive = pathname === item.href;
             return (
