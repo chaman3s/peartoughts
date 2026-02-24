@@ -79,9 +79,9 @@ export default function DoctorDetailScreen() {
   const clinicName = "Sanskar Netralaya";
   const clinicAddress = "Nungambakkam, Chennai, Tamil Nadu";
   const clinicQuery = encodeURIComponent(`${clinicName}, ${clinicAddress}`);
-  const [doctorRating, setDoctorRating] = useState(5);
-  const [hasRated, setHasRated] = useState(false);
   const [reviewText, setReviewText] = useState("");
+  const [isReviewComposerOpen, setIsReviewComposerOpen] = useState(false);
+  const [selectedRating, setSelectedRating] = useState<number | null>(null);
   const [reviews, setReviews] = useState<ReviewItem[]>([
     {
       id: "c1",
@@ -101,18 +101,20 @@ export default function DoctorDetailScreen() {
 
   const handleAddReview = () => {
     const cleanText = reviewText.trim();
-    if (!cleanText) return;
+    if (!cleanText || selectedRating === null) return;
 
     const newReview: ReviewItem = {
       id: `c${Date.now()}`,
       name: "You",
       text: cleanText,
       postedAt: "Just now",
-      rating: 5,
+      rating: selectedRating,
     };
 
     setReviews((prev) => [newReview, ...prev]);
     setReviewText("");
+    setSelectedRating(null);
+    setIsReviewComposerOpen(false);
   };
 
   const renderStars = (rating: number) => {
@@ -136,10 +138,6 @@ export default function DoctorDetailScreen() {
         })}
       </div>
     );
-  };
-
-  const handleSubmitRating = () => {
-    setHasRated(true);
   };
 
   return (
@@ -225,75 +223,8 @@ export default function DoctorDetailScreen() {
             Open in Google Maps
           </a>
 
-          <h3 className="mt-7 text-3xl font-semibold tracking-tight text-slate-900">Rate This Doctor</h3>
-          <div className="mt-3 rounded-2xl border border-slate-200 bg-slate-50 p-3">
-            <div className="flex items-center gap-1">
-              {Array.from({ length: 5 }, (_, index) => {
-                const starValue = index + 1;
-                const isActive = starValue <= doctorRating;
-                return (
-                  <button
-                    key={starValue}
-                    type="button"
-                    onClick={() => {
-                      setDoctorRating(starValue);
-                      setHasRated(false);
-                    }}
-                    className="rounded p-1"
-                    aria-label={`Rate ${starValue} star`}
-                  >
-                    <svg
-                      viewBox="0 0 24 24"
-                      className={`h-7 w-7 ${isActive ? "text-amber-400" : "text-slate-300"}`}
-                      aria-hidden="true"
-                    >
-                      <path
-                        d="m12 17.27 6.18 3.73-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"
-                        fill="currentColor"
-                      />
-                    </svg>
-                  </button>
-                );
-              })}
-              <span className="ml-2 text-base font-semibold text-slate-700">{doctorRating}.0</span>
-            </div>
-            <div className="mt-3 flex items-center justify-between gap-3">
-              <p className="text-sm text-slate-500">Select stars and submit your rating.</p>
-              <Button
-                type="button"
-                onClick={handleSubmitRating}
-                className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
-              >
-                Submit Rating
-              </Button>
-            </div>
-            {hasRated && <p className="mt-2 text-sm font-medium text-emerald-600">Thanks, your rating was submitted.</p>}
-          </div>
-
           <h3 className="mt-7 text-3xl font-semibold tracking-tight text-slate-900">Reviews</h3>
           <p className="mt-2 text-base text-slate-500">Read patient reviews and share your experience.</p>
-
-          <div className="mt-3 rounded-2xl border border-slate-200 bg-slate-50 p-3">
-            <label htmlFor="review" className="mb-2 block text-sm font-medium text-slate-700">
-              Write a review
-            </label>
-            <textarea
-              id="review"
-              value={reviewText}
-              onChange={(event) => setReviewText(event.target.value)}
-              placeholder="Type your review..."
-              className="min-h-24 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 outline-none ring-blue-500 placeholder:text-slate-400 focus:ring-2"
-            />
-            <div className="mt-3 flex justify-end">
-              <Button
-                type="button"
-                onClick={handleAddReview}
-                className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
-              >
-                Post Review
-              </Button>
-            </div>
-          </div>
 
           <div className="mt-4 space-y-3">
             {reviews.map((review) => (
@@ -310,6 +241,78 @@ export default function DoctorDetailScreen() {
               </div>
             ))}
           </div>
+
+          <div className="mt-4">
+            <Button
+              type="button"
+              onClick={() => {
+                setIsReviewComposerOpen(true);
+                setSelectedRating(null);
+              }}
+              className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+            >
+              Rate us
+            </Button>
+          </div>
+
+          {isReviewComposerOpen && (
+            <div className="mt-3 rounded-2xl border border-slate-200 bg-slate-50 p-3">
+              <p className="text-sm font-medium text-slate-700">Select stars</p>
+              <div className="mt-2 flex items-center gap-1">
+                {Array.from({ length: 5 }, (_, index) => {
+                  const starValue = index + 1;
+                  const isActive = selectedRating !== null && starValue <= selectedRating;
+                  return (
+                    <button
+                      key={starValue}
+                      type="button"
+                      onClick={() => setSelectedRating(starValue)}
+                      className="rounded p-1"
+                      aria-label={`Rate ${starValue} star`}
+                    >
+                      <svg
+                        viewBox="0 0 24 24"
+                        className={`h-7 w-7 ${isActive ? "text-amber-400" : "text-slate-300"}`}
+                        aria-hidden="true"
+                      >
+                        <path
+                          d="m12 17.27 6.18 3.73-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"
+                          fill="currentColor"
+                        />
+                      </svg>
+                    </button>
+                  );
+                })}
+                {selectedRating !== null && (
+                  <span className="ml-2 text-sm font-semibold text-slate-700">{selectedRating}.0</span>
+                )}
+              </div>
+
+              {selectedRating !== null && (
+                <>
+                  <label htmlFor="review" className="mb-2 mt-3 block text-sm font-medium text-slate-700">
+                    Write a review
+                  </label>
+                  <textarea
+                    id="review"
+                    value={reviewText}
+                    onChange={(event) => setReviewText(event.target.value)}
+                    placeholder="Type your review..."
+                    className="min-h-24 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 outline-none ring-blue-500 placeholder:text-slate-400 focus:ring-2"
+                  />
+                  <div className="mt-3 flex justify-end">
+                    <Button
+                      type="button"
+                      onClick={handleAddReview}
+                      className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+                    >
+                      Post Review
+                    </Button>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
         </div>
 
         <Button className="mt-6 w-full rounded-2xl bg-gradient-to-r from-blue-600 to-cyan-500 py-3.5 text-lg font-semibold text-white shadow-[0_14px_28px_-18px_rgba(37,99,235,0.85)] hover:from-blue-700 hover:to-cyan-600">
