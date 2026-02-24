@@ -118,61 +118,7 @@ export default function DashboardScreen() {
 
   return (
     <main className="min-h-screen bg-white text-slate-900">
-      <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/95 backdrop-blur">
-        <div className="mx-auto flex h-16 max-w-[1600px] items-center justify-between gap-4 px-4 md:px-6">
-          <div className="flex items-center gap-3">
-            <Image src={logo} alt="Logo" width={36} height={36} className="rounded-full object-cover" />
-            <p className="text-lg font-semibold tracking-tight">DoctorTube</p>
-          </div>
-
-          <div className="hidden flex-1 items-center justify-center md:flex">
-            <div className="relative w-full max-w-2xl">
-              <div className="flex w-full overflow-hidden rounded-full border border-slate-300 bg-slate-50">
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onFocus={() => setShowSuggestions(true)}
-                  onBlur={() => setTimeout(() => setShowSuggestions(false), 120)}
-                  onChange={(event) => {
-                    setSearchQuery(event.target.value);
-                    setShowSuggestions(true);
-                  }}
-                  placeholder="Search doctors, clinics, specialty"
-                  className="w-full bg-transparent px-5 py-2.5 text-sm text-slate-800 outline-none placeholder:text-slate-400"
-                />
-                <button className="border-l border-slate-300 px-5 text-sm text-slate-700">Search</button>
-              </div>
-
-              {showSuggestions && searchQuery.trim().length > 0 && (
-                <div className="absolute left-0 right-0 top-[calc(100%+8px)] rounded-xl border border-slate-200 bg-white p-2 shadow-lg">
-                  {searchRecommendations.length > 0 ? (
-                    <div className="space-y-1">
-                      {searchRecommendations.map((doctor) => (
-                        <button
-                          key={doctor.id}
-                          type="button"
-                          onMouseDown={() => {
-                            setSearchQuery(doctor.name);
-                            setShowSuggestions(false);
-                          }}
-                          className="w-full rounded-lg px-3 py-2 text-left hover:bg-slate-100"
-                        >
-                          <p className="text-sm font-medium text-slate-800">{doctor.name}</p>
-                          <p className="text-xs text-slate-500">{doctor.specialty}</p>
-                        </button>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="px-3 py-2 text-sm text-slate-500">No recommendations found</p>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div className="grid h-9 w-9 place-items-center rounded-full bg-cyan-500 font-semibold text-white">A</div>
-        </div>
-      </header>
+     
 
       <section className="mx-auto max-w-[1600px] px-4 py-5 md:px-6">
         <div className="mb-5 flex gap-2 overflow-x-auto pb-2">

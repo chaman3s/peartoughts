@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import Image from "next/image";
 import logo from "@/assets/img/logo.jpg";
+import SearchBar from "../SearchBar";
 
 type DoctorCard = {
   id: string;
@@ -108,7 +109,7 @@ export default function NavBar() {
   }, [searchQuery, doctors]);
 
   return (
-    <nav className="sticky top-0 z-20 border-b border-slate-200 bg-white/95 backdrop-blur">
+    <nav className="sticky top-0 z-20 border-b border-slate-200 bg-white ">
       <div className="mx-auto flex h-16 max-w-[1600px] items-center justify-between gap-4 px-4 md:px-6">
         
         {/* Logo Section */}
@@ -120,7 +121,7 @@ export default function NavBar() {
             height={36}
             className="rounded-full object-cover"
           />
-          <p className="text-lg font-semibold tracking-tight">
+          <p className="text-lg font-semibold tracking-tight text-black">
             DoctorTube
           </p>
         </div>
@@ -128,28 +129,21 @@ export default function NavBar() {
         {/* Search Section */}
         <div className="hidden flex-1 items-center justify-center md:flex">
           <div className="relative w-full max-w-2xl">
-            <div className="flex w-full overflow-hidden rounded-full border border-slate-300 bg-slate-50">
-              <input
-                type="text"
-                value={searchQuery}
-                onFocus={() => setShowSuggestions(true)}
-                onBlur={() =>
-                  setTimeout(() => setShowSuggestions(false), 150)
-                }
-                onChange={(event) => {
-                  setSearchQuery(event.target.value);
-                  setShowSuggestions(true);
-                }}
-                placeholder="Search doctors, clinics, specialty"
-                className="w-full bg-transparent px-5 py-2.5 text-sm text-slate-800 outline-none placeholder:text-slate-400"
-              />
-              <button
-                type="button"
-                className="border-l border-slate-300 px-5 text-sm text-slate-700 hover:bg-slate-100 transition"
-              >
-                Search
-              </button>
-            </div>
+            <SearchBar
+                 plaHor="Search doctors, clinics, specialty"
+                 inputClass="w-full bg-transparent px-5 py-2.5 text-sm text-slate-800 outline-none placeholder:text-slate-400"
+                 btnClass="border-l border-slate-300 px-5 text-sm text-slate-700 hover:bg-slate-100 transition"
+                 inputProps={{
+                 onFocus: () => setShowSuggestions(true),
+                 onBlur: () =>
+                 setTimeout(() => setShowSuggestions(false), 150),
+
+                onChange: (event) => {
+                setSearchQuery(event.target.value);
+                setShowSuggestions(true);
+    },
+  }}
+/>
 
             {/* Suggestions Dropdown */}
             {showSuggestions && searchQuery.trim().length > 0 && (
