@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import Image from "next/image";
 import logo from "@/assets/img/logo.jpg";
 import SearchBar from "../SearchBar";
+import { useSidebar } from "../SideBar/sidebar-context";
 
 type DoctorCard = {
   id: string;
@@ -19,6 +20,7 @@ type DoctorCard = {
 export default function NavBar() {
   const [searchQuery, setSearchQuery] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const { toggle } = useSidebar();
 
   const doctors: DoctorCard[] = [
     {
@@ -114,6 +116,16 @@ export default function NavBar() {
         
         {/* Logo Section */}
         <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={toggle}
+            aria-label="Toggle sidebar"
+            className="grid h-9 w-9 place-items-center rounded-full text-slate-700 transition hover:bg-slate-100"
+          >
+            <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden="true">
+              <path d="M4 6h16v2H4V6Zm0 5h16v2H4v-2Zm0 5h16v2H4v-2Z" fill="currentColor" />
+            </svg>
+          </button>
           <Image
             src={logo}
             alt="Logo"
