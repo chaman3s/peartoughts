@@ -82,6 +82,7 @@ export default function DoctorDetailScreen() {
   const [reviewText, setReviewText] = useState("");
   const [isReviewComposerOpen, setIsReviewComposerOpen] = useState(false);
   const [selectedRating, setSelectedRating] = useState<number | null>(null);
+  const [userReviewId, setUserReviewId] = useState<string | null>(null);
   const [reviews, setReviews] = useState<ReviewItem[]>([
     {
       id: "c1",
@@ -103,15 +104,31 @@ export default function DoctorDetailScreen() {
     const cleanText = reviewText.trim();
     if (!cleanText || selectedRating === null) return;
 
-    const newReview: ReviewItem = {
-      id: `c${Date.now()}`,
-      name: "You",
-      text: cleanText,
-      postedAt: "Just now",
-      rating: selectedRating,
-    };
+    if (userReviewId) {
+      setReviews((prev) =>
+        prev.map((review) =>
+          review.id === userReviewId
+            ? {
+                ...review,
+                text: cleanText,
+                rating: selectedRating,
+                postedAt: "Updated just now",
+              }
+            : review
+        )
+      );
+    } else {
+      const newReview: ReviewItem = {
+        id: `c${Date.now()}`,
+        name: "You",
+        text: cleanText,
+        postedAt: "Just now",
+        rating: selectedRating,
+      };
+      setReviews((prev) => [newReview, ...prev]);
+      setUserReviewId(newReview.id);
+    }
 
-    setReviews((prev) => [newReview, ...prev]);
     setReviewText("");
     setSelectedRating(null);
     setIsReviewComposerOpen(false);
@@ -247,11 +264,20 @@ export default function DoctorDetailScreen() {
               type="button"
               onClick={() => {
                 setIsReviewComposerOpen(true);
-                setSelectedRating(null);
+                if (userReviewId) {
+                  const currentUserReview = reviews.find((review) => review.id === userReviewId);
+                  if (currentUserReview) {
+                    setSelectedRating(currentUserReview.rating);
+                    setReviewText(currentUserReview.text);
+                  }
+                } else {
+                  setSelectedRating(null);
+                  setReviewText("");
+                }
               }}
               className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
             >
-              Rate us
+              {userReviewId ? "Edit your review" : "Rate us"}
             </Button>
           </div>
 
@@ -306,7 +332,7 @@ export default function DoctorDetailScreen() {
                       onClick={handleAddReview}
                       className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
                     >
-                      Post Review
+                      {userReviewId ? "Update Review" : "Post Review"}
                     </Button>
                   </div>
                 </>
