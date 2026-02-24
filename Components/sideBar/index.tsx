@@ -3,7 +3,7 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useSidebar } from "./sidebar-context";
+import { useSidebar } from "../../ContextApi/sidebar-context";
 
 type SideBarItem = {
   id: string;

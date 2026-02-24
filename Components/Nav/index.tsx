@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import Image from "next/image";
 import logo from "@/assets/img/logo.jpg";
 import SearchBar from "../SearchBar";
-import { useSidebar } from "../SideBar/sidebar-context";
+import { useSidebar } from "../../ContextApi/sidebar-context";
 
 type DoctorCard = {
   id: string;
