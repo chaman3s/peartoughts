@@ -3,6 +3,7 @@
 import { type ReactNode, useState } from "react";
 import Button from "@/Components/ui/Button";
 import DoctorHeader from "../DoctorHeader";
+import { DoctorProvider, useDoctor, type DoctorHeaderData } from "@/ContextApi/doctorContext";
 
 type Stat = {
   id: string;
@@ -104,7 +105,18 @@ const eveningSlots: TimeSlot[] = [
   { id: "e-0100b", label: "01:00 PM - 01:15PM" },
 ];
 
-export default function BookAppointment() {
+const doctorData: DoctorHeaderData = {
+  status: "Available Today",
+  doctorName: "Dr. Kumar Das",
+  specialist: "Ophthalmologist",
+  doctorDegree: "MBBS, MS (Surgeon)",
+  clinicLocation: "Fellow of Sanskar Netralaya, Chennai",
+  doctorImage: "https://images.pexels.com/photos/4173251/pexels-photo-4173251.jpeg",
+  stats,
+};
+
+function BookAppointmentContent() {
+  const { doctor } = useDoctor();
   const [selectedDay, setSelectedDay] = useState(daySlots[1].id);
   const [selectedMorningSlot, setSelectedMorningSlot] = useState<string | null>(null);
   const [selectedEveningSlot, setSelectedEveningSlot] = useState<string | null>(null);
@@ -115,13 +127,13 @@ export default function BookAppointment() {
     <main className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-blue-50/40">
       <section className="mx-auto w-full max-w-5xl px-4 pb-10 pt-6 md:px-6">
         <DoctorHeader
-          status={"Available Today"}
-          doctorName={"Dr. Kumar Das"}
-          specialist={"Ophthalmologist"}
-          doctorDegree={"MBBS, MS (Surgeon)"}
-          clinicLocation={"Fellow of Sanskar Netralaya, Chennai"}
-          doctorImage={"https://images.pexels.com/photos/4173251/pexels-photo-4173251.jpeg"}
-          stats={stats}
+          status={doctor.status}
+          doctorName={doctor.doctorName}
+          specialist={doctor.specialist}
+          doctorDegree={doctor.doctorDegree}
+          clinicLocation={doctor.clinicLocation}
+          doctorImage={doctor.doctorImage}
+          stats={doctor.stats}
         />
 
         <div className="mx-auto mt-6  rounded-3xl border border-slate-100 bg-white p-4 shadow-[0_14px_38px_-26px_rgba(15,23,42,0.45)] sm:p-6">
@@ -222,5 +234,13 @@ export default function BookAppointment() {
         </div>
       </section>
     </main>
+  );
+}
+
+export default function BookAppointment() {
+  return (
+    <DoctorProvider initialDoctor={doctorData}>
+      <BookAppointmentContent />
+    </DoctorProvider>
   );
 }
