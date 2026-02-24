@@ -134,6 +134,12 @@ export default function DoctorDetailScreen() {
     setIsReviewComposerOpen(false);
   };
 
+  const handleCancelReview = () => {
+    setIsReviewComposerOpen(false);
+    setSelectedRating(null);
+    setReviewText("");
+  };
+
   const renderStars = (rating: number) => {
     return (
       <div className="flex items-center gap-1">
@@ -260,25 +266,38 @@ export default function DoctorDetailScreen() {
           </div>
 
           <div className="mt-4">
-            <Button
-              type="button"
-              onClick={() => {
-                setIsReviewComposerOpen(true);
-                if (userReviewId) {
-                  const currentUserReview = reviews.find((review) => review.id === userReviewId);
-                  if (currentUserReview) {
-                    setSelectedRating(currentUserReview.rating);
-                    setReviewText(currentUserReview.text);
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                disabled={isReviewComposerOpen}
+                onClick={() => {
+                  setIsReviewComposerOpen(true);
+                  if (userReviewId) {
+                    const currentUserReview = reviews.find((review) => review.id === userReviewId);
+                    if (currentUserReview) {
+                      setSelectedRating(currentUserReview.rating);
+                      setReviewText(currentUserReview.text);
+                    }
+                  } else {
+                    setSelectedRating(null);
+                    setReviewText("");
                   }
-                } else {
-                  setSelectedRating(null);
-                  setReviewText("");
-                }
-              }}
-              className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
-            >
-              {userReviewId ? "Edit your review" : "Rate us"}
-            </Button>
+                }}
+                className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:bg-blue-300"
+              >
+                {userReviewId ? "Edit your review" : "Rate us"}
+              </Button>
+
+              {isReviewComposerOpen && (
+                <Button
+                  type="button"
+                  onClick={handleCancelReview}
+                  className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100"
+                >
+                  Cancel
+                </Button>
+              )}
+            </div>
           </div>
 
           {isReviewComposerOpen && (
@@ -314,29 +333,26 @@ export default function DoctorDetailScreen() {
                 )}
               </div>
 
-              {selectedRating !== null && (
-                <>
-                  <label htmlFor="review" className="mb-2 mt-3 block text-sm font-medium text-slate-700">
-                    Write a review
-                  </label>
-                  <textarea
-                    id="review"
-                    value={reviewText}
-                    onChange={(event) => setReviewText(event.target.value)}
-                    placeholder="Type your review..."
-                    className="min-h-24 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 outline-none ring-blue-500 placeholder:text-slate-400 focus:ring-2"
-                  />
-                  <div className="mt-3 flex justify-end">
-                    <Button
-                      type="button"
-                      onClick={handleAddReview}
-                      className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
-                    >
-                      {userReviewId ? "Update Review" : "Post Review"}
-                    </Button>
-                  </div>
-                </>
-              )}
+              <label htmlFor="review" className="mb-2 mt-3 block text-sm font-medium text-slate-700">
+                Write a review
+              </label>
+              <textarea
+                id="review"
+                value={reviewText}
+                onChange={(event) => setReviewText(event.target.value)}
+                placeholder="Type your review..."
+                className="min-h-24 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 outline-none ring-blue-500 placeholder:text-slate-400 focus:ring-2"
+              />
+              <div className="mt-3 flex justify-end">
+                <Button
+                  type="button"
+                  disabled={selectedRating === null || reviewText.trim().length === 0}
+                  onClick={handleAddReview}
+                  className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:bg-blue-300"
+                >
+                  {userReviewId ? "Update Review" : "Post Review"}
+                </Button>
+              </div>
             </div>
           )}
         </div>
