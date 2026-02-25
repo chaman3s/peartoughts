@@ -4,6 +4,7 @@ import { useState } from "react";
 import Button from "@/Components/ui/Button";
 import DoctorHeader from "../DoctorHeader";
 import { useDoctor } from "@/ContextApi/doctorContext";
+import { setDoctorContextAndNavigate, useNavigate } from "@/utils";
 
 type DaySlot = {
   id: string;
@@ -45,12 +46,46 @@ const eveningSlots: TimeSlot[] = [
 ];
 
 export default function BookAppointment() {
-  const { doctor } = useDoctor();
+  const { doctor, setDoctor } = useDoctor();
+  const navigate = useNavigate();
   const [selectedDay, setSelectedDay] = useState(daySlots[1].id);
   const [selectedMorningSlot, setSelectedMorningSlot] = useState<string | null>(null);
   const [selectedEveningSlot, setSelectedEveningSlot] = useState<string | null>(null);
 
   const selectedSlot = selectedMorningSlot ?? selectedEveningSlot;
+
+  const handleBookAppointment = () => {
+    if (!selectedSlot) return;
+
+    const day = daySlots.find((slot) => slot.id === selectedDay);
+    const allSlots = [...morningSlots, ...eveningSlots];
+    const timeSlot = allSlots.find((slot) => slot.id === selectedSlot);
+
+    if (!day || !timeSlot) return;
+    const experienceValue = doctor.stats.find((stat) => stat.id === "experience")?.value ?? "0 years";
+    const ratingValue = doctor.stats.find((stat) => stat.id === "rating")?.value ?? "0";
+
+    setDoctorContextAndNavigate(
+      {
+        id: "book-appointment",
+        name: doctor.doctorName,
+        specialty: doctor.specialist,
+        experience: experienceValue,
+        rating: ratingValue,
+        description: "",
+        tags: [],
+        availableToday: doctor.status.toLowerCase().includes("available"),
+      },
+      "/dashBoard/appointmet-status?status=active",
+      setDoctor,
+      navigate,
+      {
+        status: "Active",
+        appointmentDate: `Oct ${day.date}, 2023`,
+        appointmentTime: timeSlot.label,
+      }
+    );
+  };
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-blue-50/40">
@@ -155,6 +190,7 @@ export default function BookAppointment() {
 
           <Button
             type="button"
+            onClick={handleBookAppointment}
             disabled={!selectedSlot}
             className="mt-6 w-full rounded-2xl bg-cyan-500 py-3 text-lg font-semibold text-white hover:bg-cyan-600 disabled:bg-cyan-300 sm:text-xl"
           >

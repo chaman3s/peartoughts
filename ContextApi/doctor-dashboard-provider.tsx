@@ -10,6 +10,8 @@ const doctorData: DoctorHeaderData = {
   doctorDegree: "MBBS, MS (Surgeon)",
   clinicLocation: "Fellow of Sanskar Netralaya, Chennai",
   doctorImage: "https://images.pexels.com/photos/4173251/pexels-photo-4173251.jpeg",
+  appointmentDate: "Oct 27, 2023",
+  appointmentTime: "7:30 PM",
   stats: [
     {
       id: "patients",

@@ -1,3 +1,7 @@
+"use client";
+
+import { useCallback } from "react";
+import { useRouter } from "next/navigation";
 import type { Dispatch, SetStateAction } from "react";
 import type { DoctorHeaderData } from "@/ContextApi/doctorContext";
 
@@ -12,30 +16,38 @@ export type DoctorCard = {
   availableToday: boolean;
 };
 
-type RouterLike = {
-  push: (href: string) => void;
-};
+type NavigateFn = (pageUrl: string) => void;
+
+export function useNavigate() {
+  const router = useRouter();
+
+  return useCallback((pageUrl: string) => {
+    router.push(pageUrl);
+  }, [router]);
+}
 
 export const setDoctorContextAndNavigate = (
   doctor: DoctorCard,
   pageUrl: string,
   setDoctor: Dispatch<SetStateAction<DoctorHeaderData>>,
-  router: RouterLike
+  navigate: NavigateFn,
+  updates?: Partial<DoctorHeaderData>
 ) => {
   setDoctor((prev) => ({
     ...prev,
     status: doctor.availableToday ? "Available Today" : "Available by Appointment",
     doctorName: doctor.name,
     specialist: doctor.specialty,
-    doctorDegree: "MBBS, MD",
-    clinicLocation: "City Care Clinic",
-    doctorImage: "https://images.pexels.com/photos/4173251/pexels-photo-4173251.jpeg",
+    doctorDegree: prev.doctorDegree,
+    clinicLocation: prev.clinicLocation,
+    doctorImage: prev.doctorImage,
     stats: prev.stats.map((stat) => {
       if (stat.id === "experience") return { ...stat, value: doctor.experience, label: "experience" };
       if (stat.id === "rating") return { ...stat, value: doctor.rating, label: "rating" };
       return stat;
     }),
+    ...updates,
   }));
 
-  router.push(pageUrl);
+  navigate(pageUrl);
 };

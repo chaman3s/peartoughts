@@ -1,7 +1,6 @@
 ﻿"use client";
-import { setDoctorContextAndNavigate } from "@/utils";
+import { setDoctorContextAndNavigate, useNavigate } from "@/utils";
 import { useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
 import { Card } from "@/Components/ui/Card";
 import Button from "@/Components/ui/Button";
 import Image from "@/Components/ui/Image";
@@ -93,7 +92,7 @@ const doctors: DoctorCard[] = [
 ];
 
 export default function DashboardScreen() {
-  const router = useRouter();
+  const navigate = useNavigate();
   const { setDoctor } = useDoctor();
   const [activeTag, setActiveTag] = useState<(typeof filterTags)[number]>("All");
   const getStars = (rating: string) => "\u2605".repeat(Math.round(Number(rating)));
@@ -157,8 +156,8 @@ export default function DashboardScreen() {
                 </div>
 
                 <div className="flex gap-2">
-                  <Button onClick={() => setDoctorContextAndNavigate(doctor, "/dashBoard/DoctorDetail", setDoctor, router)} className="flex-1 border border-slate-300 bg-white text-slate-800 hover:bg-slate-100">View More</Button>
-                  <Button onClick={() => setDoctorContextAndNavigate(doctor, "/dashBoard/BookAppointment", setDoctor, router)} className="flex-1 bg-blue-600 text-white hover:bg-blue-700">Book Appointment</Button>
+                  <Button onClick={() => setDoctorContextAndNavigate(doctor, "/dashBoard/DoctorDetail", setDoctor, navigate)} className="flex-1 border border-slate-300 bg-white text-slate-800 hover:bg-slate-100">View More</Button>
+                  <Button onClick={() => setDoctorContextAndNavigate(doctor, "/dashBoard/BookAppointment", setDoctor, navigate)} className="flex-1 bg-blue-600 text-white hover:bg-blue-700">Book Appointment</Button>
                 </div>
               </div>
             </Card>

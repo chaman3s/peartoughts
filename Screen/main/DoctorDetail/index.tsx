@@ -1,10 +1,11 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import Button from "@/Components/ui/Button";
 
 import DoctorHeader from "../DoctorHeader";
 import { useDoctor } from "@/ContextApi/doctorContext";
+import { useNavigate } from "@/utils";
 
 type ReviewItem = {
   id: string;
@@ -16,6 +17,7 @@ type ReviewItem = {
 
 export default function DoctorDetailScreen() {
   const { doctor } = useDoctor();
+  const navigate = useNavigate();
   const clinicName = "Sanskar Netralaya";
   const clinicAddress = "Nungambakkam, Chennai, Tamil Nadu";
   const clinicQuery = encodeURIComponent(`${clinicName}, ${clinicAddress}`);
@@ -276,11 +278,13 @@ export default function DoctorDetailScreen() {
           )}
         </div>
 
-        <Button className="mt-6 w-full rounded-2xl bg-gradient-to-r from-blue-600 to-cyan-500 py-3.5 text-lg font-semibold text-white shadow-[0_14px_28px_-18px_rgba(37,99,235,0.85)] hover:from-blue-700 hover:to-cyan-600">
+        <Button
+          onClick={() => navigate("/dashBoard/BookAppointment")}
+          className="mt-6 w-full rounded-2xl bg-gradient-to-r from-blue-600 to-cyan-500 py-3.5 text-lg font-semibold text-white shadow-[0_14px_28px_-18px_rgba(37,99,235,0.85)] hover:from-blue-700 hover:to-cyan-600"
+        >
           Book appointment
         </Button>
       </section>
     </main>
   );
 }
-

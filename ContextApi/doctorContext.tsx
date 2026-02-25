@@ -25,6 +25,8 @@ export type DoctorHeaderData = {
   doctorDegree: string;
   clinicLocation: string;
   doctorImage: string;
+  appointmentDate: string;
+  appointmentTime: string;
   stats: DoctorStat[];
 };
 

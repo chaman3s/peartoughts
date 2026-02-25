@@ -41,12 +41,12 @@ export default function AppointmentStatus() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <p className="text-lg font-semibold text-slate-500">Status</p>
-                  <p className="text-2xl font-semibold text-green-600">Active</p>
+                  <p className="text-2xl font-semibold text-green-600">{doctor.status}</p>
                 </div>
                 <div>
                   <p className="text-lg font-semibold text-slate-500">Reporting Time</p>
-                  <p className="text-xl font-semibold text-slate-900">Oct 27, 2023</p>
-                  <p className="text-xl font-semibold text-slate-900">7:30 PM</p>
+                  <p className="text-xl font-semibold text-slate-900">{doctor.appointmentDate}</p>
+                  <p className="text-xl font-semibold text-slate-900">{doctor.appointmentTime}</p>
                 </div>
               </div>
             </div>
