@@ -1,11 +1,12 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Button from "@/Components/ui/Button";
 import { useDoctor } from "@/ContextApi/doctorContext";
 import DoctorHeader from "../DoctorHeader";
 import { useNavigate } from "@/utils";
+import AddToCalendarScreen from "../AddToCalendar";
 
 const SUCCESS_STATUSES = ["success", "successful", "active", "confirmed"] as const;
 
@@ -13,6 +14,7 @@ export default function AppointmentStatus() {
   const { doctor } = useDoctor();
   const navigate = useNavigate();
   const searchParams = useSearchParams();
+  const [showCalendor, setShowCalendor] = useState(false);
 
   const isSuccessful = useMemo(() => {
     const rawStatus = searchParams.get("status")?.trim().toLowerCase() ?? "success";
@@ -59,12 +61,16 @@ export default function AppointmentStatus() {
 
             <Button
               type="button"
-              onClick={handleAddToCalendar}
+              onClick={()=>setShowCalendor((p)=>!p)}
               className="w-fit rounded-2xl bg-cyan-100 px-6 py-3 text-base font-semibold text-cyan-600 hover:bg-cyan-200"
             >
               Add to calendar
             </Button>
-
+            {
+                showCalendor&&(
+                    <AddToCalendarScreen/>
+                )
+            }
             <div className="pt-1">
               <p className="text-lg font-semibold text-slate-900">Add Patient Details</p>
               <Button
