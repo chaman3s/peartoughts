@@ -1,5 +1,5 @@
 import DoctorDashboardProvider from "@/ContextApi/doctor-dashboard-provider";
-import SideBar from "../../../Components/SideBar";
+import SideBar from "@/Components/sidebar";
 import { SidebarProvider } from "@/ContextApi/sidebar-context";
 import NavBar from "@/Components/Nav";
 export default function HomeLayout({
