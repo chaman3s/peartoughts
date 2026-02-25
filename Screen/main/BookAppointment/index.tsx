@@ -166,7 +166,7 @@ export default function BookAppointment() {
         tags: [],
         availableToday: doctor.status.toLowerCase().includes("available"),
       },
-      "/dashBoard/appointmet-status?status=active",
+      "/dashBoard/appointmetReview?status=active",
       setDoctor,
       navigate,
       {
@@ -343,19 +343,6 @@ export default function BookAppointment() {
                 }}
                 className="w-full rounded-xl border border-slate-300 px-3 py-2 pr-10 text-sm text-slate-800 outline-none focus:border-cyan-500"
               />
-              {/* <button
-                type="button"
-                onClick={openNativeCalendar}
-                className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1 text-slate-500 hover:bg-slate-100"
-                aria-label="Show calendar"
-              >
-                <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden="true">
-                  <path
-                    d="M19 4h-1V2h-2v2H8V2H6v2H5a2 2 0 0 0-2 2v13a3 3 0 0 0 3 3h13a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2Zm0 16H6a1 1 0 0 1-1-1V10h14Zm0-12H5V6h14Z"
-                    fill="currentColor"
-                  />
-                </svg>
-              </button> */}
             </div>
             {calendarError && <p className="mt-2 text-xs font-medium text-rose-600">{calendarError}</p>}
 

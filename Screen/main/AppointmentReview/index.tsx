@@ -14,7 +14,7 @@ export default function AppointmentStatus() {
   const { doctor } = useDoctor();
   const navigate = useNavigate();
   const searchParams = useSearchParams();
-  const [showCalendor, setShowCalendor] = useState(false);
+  const [showCalendar, setShowCalendar] = useState(false);
 
   const isSuccessful = useMemo(() => {
     const rawStatus = searchParams.get("status")?.trim().toLowerCase() ?? "success";
@@ -61,13 +61,13 @@ export default function AppointmentStatus() {
 
             <Button
               type="button"
-              onClick={()=>setShowCalendor((p)=>!p)}
+              onClick={()=>setShowCalendar((p)=>!p)}
               className="w-fit rounded-2xl bg-cyan-100 px-6 py-3 text-base font-semibold text-cyan-600 hover:bg-cyan-200"
             >
               Add to calendar
             </Button>
             {
-                showCalendor&&(
+                showCalendar&&(
                     <AddToCalendarScreen/>
                 )
             }
@@ -75,6 +75,7 @@ export default function AppointmentStatus() {
               <p className="text-lg font-semibold text-slate-900">Add Patient Details</p>
               <Button
                 type="button"
+                onClick={() => navigate("/dashBoard/AddPatientDetail")}
                 className="mt-3 rounded-2xl border border-cyan-400 bg-white px-6 py-3 text-base font-semibold text-cyan-500 hover:bg-cyan-50"
               >
                 + Add Patient Details
