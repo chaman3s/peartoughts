@@ -14,6 +14,7 @@ export type AppointmentItem = {
   id: string;
   doctorName: string;
   tokenNo: number;
+  appointmentDateIso: string;
   dayLabel: string;
   time: string;
   paid: boolean;
@@ -32,6 +33,7 @@ const initialAppointments: AppointmentItem[] = [
     id: "apt-1",
     doctorName: "Dr. Divya Das",
     tokenNo: 12,
+    appointmentDateIso: new Date().toISOString().slice(0, 10),
     dayLabel: "Today",
     time: "12:30 PM",
     paid: false,
@@ -49,6 +51,7 @@ export function AppointmentProvider({ children }: { children: ReactNode }) {
         id: appointment.id ?? `apt-${Date.now()}`,
         tokenNo: appointment.tokenNo ?? maxToken + 1,
         doctorName: appointment.doctorName,
+        appointmentDateIso: appointment.appointmentDateIso,
         dayLabel: appointment.dayLabel,
         time: appointment.time,
         paid: appointment.paid,

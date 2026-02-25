@@ -39,7 +39,7 @@ const eveningSlots: TimeSlot[] = [
 
 export default function BookAppointment() {
   const { doctor, setDoctor } = useDoctor();
-  const { addAppointment } = useAppointment();
+  const { appointments, addAppointment } = useAppointment();
   const navigate = useNavigate();
   const todayIso = useMemo(() => new Date().toISOString().slice(0, 10), []);
   const [selectedDay, setSelectedDay] = useState(todayIso);
@@ -76,6 +76,19 @@ export default function BookAppointment() {
     if (Number.isNaN(parsedDate.getTime())) return "July, 2023";
     return new Intl.DateTimeFormat("en-US", { month: "long", year: "numeric" }).format(parsedDate);
   }, [selectedDay]);
+
+  const bookedTimesForSelectedDay = useMemo(() => {
+    return new Set(
+      appointments
+        .filter((item) => item.appointmentDateIso === selectedDay && item.status !== "Canceled")
+        .map((item) => item.time.trim())
+    );
+  }, [appointments, selectedDay]);
+
+  const isAlreadyBooked = (slotLabel: string) => {
+    const slotStart = slotLabel.split("-")[0]?.trim() ?? slotLabel.trim();
+    return bookedTimesForSelectedDay.has(slotStart);
+  };
 
   const isPastDate = (value: string) => {
     if (!value) return false;
@@ -137,6 +150,10 @@ export default function BookAppointment() {
       setCalendarError("Selected time slot has already passed.");
       return;
     }
+    if (isAlreadyBooked(timeSlot.label)) {
+      setCalendarError("This slot is already booked for the selected day.");
+      return;
+    }
     const experienceValue = doctor.stats.find((stat) => stat.id === "experience")?.value ?? "0 years";
     const ratingValue = doctor.stats.find((stat) => stat.id === "rating")?.value ?? "0";
     const selectedDate = new Date(`${selectedDay}T00:00:00`);
@@ -148,6 +165,7 @@ export default function BookAppointment() {
 
     addAppointment({
       doctorName: doctor.doctorName,
+      appointmentDateIso: selectedDay,
       dayLabel,
       time: slotTime,
       paid: false,
@@ -249,7 +267,8 @@ export default function BookAppointment() {
             {morningSlots.map((slot) => {
               const isSelected = selectedMorningSlot === slot.id;
               const isTimePassed = isSlotPassed(slot.label);
-              const isDisabled = Boolean(slot.disabled) || isTimePassed;
+              const isBooked = isAlreadyBooked(slot.label);
+              const isDisabled = Boolean(slot.disabled) || isTimePassed || isBooked;
               return (
                 <button
                   key={slot.id}
@@ -269,6 +288,7 @@ export default function BookAppointment() {
                   }`}
                 >
                   {slot.label}
+                  {isBooked && <span className="ml-1 text-xs font-semibold">(Booked)</span>}
                 </button>
               );
             })}
@@ -278,7 +298,8 @@ export default function BookAppointment() {
           <div className="mt-3 grid grid-cols-2 gap-3">
             {eveningSlots.map((slot) => {
               const isSelected = selectedEveningSlot === slot.id;
-              const isDisabled = isSlotPassed(slot.label);
+              const isBooked = isAlreadyBooked(slot.label);
+              const isDisabled = isSlotPassed(slot.label) || isBooked;
               return (
                 <button
                   key={slot.id}
@@ -298,6 +319,7 @@ export default function BookAppointment() {
                   }`}
                 >
                   {slot.label}
+                  {isBooked && <span className="ml-1 text-xs font-semibold">(Booked)</span>}
                 </button>
               );
             })}
