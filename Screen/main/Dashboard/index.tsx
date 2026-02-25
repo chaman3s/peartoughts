@@ -1,10 +1,12 @@
 ﻿"use client";
-
+import { setDoctorContextAndNavigate } from "@/utils";
 import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Card } from "@/Components/ui/Card";
 import Button from "@/Components/ui/Button";
 import Image from "@/Components/ui/Image";
 import logo from "@/assets/img/logo.jpg";
+import { useDoctor } from "@/ContextApi/doctorContext";
 
 type DoctorCard = {
   id: string;
@@ -91,10 +93,12 @@ const doctors: DoctorCard[] = [
 ];
 
 export default function DashboardScreen() {
+  const router = useRouter();
+ 
   const [activeTag, setActiveTag] = useState<(typeof filterTags)[number]>("All");
   const [searchQuery, setSearchQuery] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const getStars = (rating: string) => "★".repeat(Math.round(Number(rating)));
+  const getStars = (rating: string) => "\u2605".repeat(Math.round(Number(rating)));
 
   const filteredDoctors = useMemo(() => {
     if (activeTag === "All") return doctors;
@@ -115,6 +119,7 @@ export default function DashboardScreen() {
       })
       .slice(0, 6);
   }, [searchQuery]);
+
 
   return (
     <main className="min-h-screen bg-white text-slate-900">
@@ -167,8 +172,8 @@ export default function DashboardScreen() {
                 </div>
 
                 <div className="flex gap-2">
-                  <Button className="flex-1 border border-slate-300 bg-white text-slate-800 hover:bg-slate-100">View</Button>
-                  <Button className="flex-1 bg-blue-600 text-white hover:bg-blue-700">Book Appointment</Button>
+                  <Button onClick={() => setDoctorContextAndNavigate(doctor,"/dashBoard/DoctorDetail")} className="flex-1 border border-slate-300 bg-white text-slate-800 hover:bg-slate-100">View More</Button>
+                  <Button onClick={() => setDoctorContextAndNavigate(doctor,"/dashBoard/BookAppointment")} className="flex-1 bg-blue-600 text-white hover:bg-blue-700">Book Appointment</Button>
                 </div>
               </div>
             </Card>
@@ -182,3 +187,4 @@ export default function DashboardScreen() {
     </main>
   );
 }
+
