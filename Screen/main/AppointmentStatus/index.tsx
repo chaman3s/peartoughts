@@ -20,13 +20,7 @@ export default function AppointmentStatus() {
   }, [searchParams]);
 
   const handleAddToCalendar = () => {
-    const query = new URLSearchParams({
-      action: "TEMPLATE",
-      text: `Appointment with ${doctor.doctorName}`,
-      details: `Status: ${doctor.status}\nReporting: ${doctor.appointmentDate} ${doctor.appointmentTime}`,
-    });
-
-    window.open(`https://calendar.google.com/calendar/render?${query.toString()}`, "_blank", "noopener,noreferrer");
+    navigate("/dashBoard/AddToCalendar");
   };
 
   return (
