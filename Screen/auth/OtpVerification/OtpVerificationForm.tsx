@@ -142,7 +142,7 @@ export default function OtpVerificationForm() {
       return;
     }
 
-    router.push("/dashBoard");
+    router.push("/home/dashBoard");
   };
 
   return (

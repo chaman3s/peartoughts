@@ -21,10 +21,6 @@ export default function AppointmentStatus() {
     return SUCCESS_STATUSES.includes(rawStatus as (typeof SUCCESS_STATUSES)[number]);
   }, [searchParams]);
 
-  const handleAddToCalendar = () => {
-    navigate("/dashBoard/AddToCalendar");
-  };
-
   return (
     <main className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-blue-50/40">
       <section className="mx-auto w-full max-w-5xl px-4 pb-10 pt-6 md:px-6">
@@ -75,7 +71,7 @@ export default function AppointmentStatus() {
               <p className="text-lg font-semibold text-slate-900">Add Patient Details</p>
               <Button
                 type="button"
-                onClick={() => navigate("/dashBoard/AddPatientDetail")}
+                onClick={() => navigate("/home/dashBoard/AddPatientDetail")}
                 className="mt-3 rounded-2xl border border-cyan-400 bg-white px-6 py-3 text-base font-semibold text-cyan-500 hover:bg-cyan-50"
               >
                 + Add Patient Details
@@ -84,10 +80,10 @@ export default function AppointmentStatus() {
 
             <Button
               type="button"
-              onClick={() => navigate("/dashBoard")}
+              onClick={() => navigate("/home/appointments")}
               className="mt-12 w-full rounded-2xl bg-cyan-500 py-4 text-xl font-semibold text-white hover:bg-cyan-600"
             >
-              View My Appointment
+              View Appointment
             </Button>
           </div>
         ) : (
@@ -98,7 +94,7 @@ export default function AppointmentStatus() {
 
             <Button
               type="button"
-              onClick={() => navigate("/dashBoard/BookAppointment")}
+              onClick={() => navigate("/home/dashBoard/BookAppointment")}
               className="w-full rounded-2xl bg-cyan-500 py-4 text-xl font-semibold text-white hover:bg-cyan-600"
             >
               Yes

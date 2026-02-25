@@ -2,6 +2,8 @@
 
 import type { ReactNode } from "react";
 import { DoctorProvider, type DoctorHeaderData } from "@/ContextApi/doctorContext";
+import { PatientProvider } from "@/ContextApi/patientContext";
+import { AppointmentProvider } from "@/ContextApi/appointmentContext";
 
 const doctorData: DoctorHeaderData = {
   status: "Available Today",
@@ -69,5 +71,11 @@ const doctorData: DoctorHeaderData = {
 };
 
 export default function DoctorDashboardProvider({ children }: { children: ReactNode }) {
-  return <DoctorProvider initialDoctor={doctorData}>{children}</DoctorProvider>;
+  return (
+    <DoctorProvider initialDoctor={doctorData}>
+      <PatientProvider>
+        <AppointmentProvider>{children}</AppointmentProvider>
+      </PatientProvider>
+    </DoctorProvider>
+  );
 }

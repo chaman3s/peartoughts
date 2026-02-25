@@ -279,7 +279,7 @@ export default function DoctorDetailScreen() {
         </div>
 
         <Button
-          onClick={() => navigate("/dashBoard/BookAppointment")}
+          onClick={() => navigate("/home/dashBoard/BookAppointment")}
           className="mt-6 w-full rounded-2xl bg-gradient-to-r from-blue-600 to-cyan-500 py-3.5 text-lg font-semibold text-white shadow-[0_14px_28px_-18px_rgba(37,99,235,0.85)] hover:from-blue-700 hover:to-cyan-600"
         >
           Book appointment

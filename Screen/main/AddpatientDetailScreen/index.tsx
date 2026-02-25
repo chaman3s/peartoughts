@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import Button from "@/Components/ui/Button";
+import { useNavigate } from "@/utils";
+import { usePatient } from "@/ContextApi/patientContext";
 
 type PatientFormState = {
   fullName: string;
@@ -19,6 +21,8 @@ const genderOptions = ["Male", "Female", "Other"];
 type PatientFormErrors = Partial<Record<keyof PatientFormState, string>>;
 
 export default function AddPatientDetailScreen() {
+  const navigate = useNavigate();
+  const { setPatientDetails } = usePatient();
   const [form, setForm] = useState<PatientFormState>({
     fullName: "",
     age: "",
@@ -71,14 +75,19 @@ export default function AddPatientDetailScreen() {
     const nextErrors = validateForm(form);
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length > 0) return;
-    console.log("Patient detail saved", {
+    const sanitizedData = {
       ...form,
       fullName: form.fullName.trim(),
       gender: form.gender.trim(),
       mobileNumber: form.mobileNumber.replace(/\D/g, ""),
+      age: form.age.trim(),
+      weight: form.weight.trim(),
       problem: form.problem.trim(),
       relationship: form.relationship.trim(),
-    });
+    };
+
+    setPatientDetails(sanitizedData);
+    navigate("/home/dashBoard/patientDeatail");
   };
 
   return (

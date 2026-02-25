@@ -1,10 +1,11 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import logo from "@/assets/img/logo.jpg";
 import SearchBar from "../SearchBar";
 import { useSidebar } from "../../ContextApi/sidebar-context";
+import { isMockAuthenticated } from "@/services/mockAuthApi";
 
 type DoctorCard = {
   id: string;
@@ -20,9 +21,10 @@ type DoctorCard = {
 export default function NavBar() {
   const [searchQuery, setSearchQuery] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(() => isMockAuthenticated());
   const { toggle } = useSidebar();
 
-  const doctors: DoctorCard[] = [
+  const doctors = useMemo<DoctorCard[]>(() => [
     {
       id: "doc-1",
       name: "Dr. Amelia Clark",
@@ -89,7 +91,7 @@ export default function NavBar() {
       tags: ["General", "Quick Consult", "Available"],
       availableToday: true,
     },
-  ];
+  ], []);
 
   const searchRecommendations = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
@@ -109,6 +111,18 @@ export default function NavBar() {
       })
       .slice(0, 6);
   }, [searchQuery, doctors]);
+
+  useEffect(() => {
+    const syncAuthState = () => setIsLoggedIn(isMockAuthenticated());
+
+    window.addEventListener("storage", syncAuthState);
+    window.addEventListener("mock-auth-changed", syncAuthState as EventListener);
+
+    return () => {
+      window.removeEventListener("storage", syncAuthState);
+      window.removeEventListener("mock-auth-changed", syncAuthState as EventListener);
+    };
+  }, []);
 
   return (
     <nav className="sticky top-0 z-20 border-b border-slate-200 bg-white ">
@@ -139,62 +153,66 @@ export default function NavBar() {
         </div>
 
         {/* Search Section */}
-        <div className="hidden flex-1 items-center justify-center md:flex">
-          <div className="relative w-full max-w-2xl">
-            <SearchBar
-                 plaHor="Search doctors, clinics, specialty"
-                 inputClass="w-full bg-transparent px-5 py-2.5 text-sm text-slate-800 outline-none placeholder:text-slate-400"
-                 btnClass="border-l border-slate-300 px-5 text-sm text-slate-700 hover:bg-slate-100 transition"
-                 inputProps={{
-                 onFocus: () => setShowSuggestions(true),
-                 onBlur: () =>
-                 setTimeout(() => setShowSuggestions(false), 150),
+        {isLoggedIn && (
+          <div className="hidden flex-1 items-center justify-center md:flex">
+            <div className="relative w-full max-w-2xl">
+              <SearchBar
+                   plaHor="Search doctors, clinics, specialty"
+                   inputClass="w-full bg-transparent px-5 py-2.5 text-sm text-slate-800 outline-none placeholder:text-slate-400"
+                   btnClass="border-l border-slate-300 px-5 text-sm text-slate-700 hover:bg-slate-100 transition"
+                   inputProps={{
+                   onFocus: () => setShowSuggestions(true),
+                   onBlur: () =>
+                   setTimeout(() => setShowSuggestions(false), 150),
 
-                onChange: (event) => {
-                setSearchQuery(event.target.value);
-                setShowSuggestions(true);
-    },
-  }}
-/>
+                  onChange: (event) => {
+                  setSearchQuery(event.target.value);
+                  setShowSuggestions(true);
+      },
+    }}
+  />
 
-            {/* Suggestions Dropdown */}
-            {showSuggestions && searchQuery.trim().length > 0 && (
-              <div className="absolute left-0 right-0 top-[calc(100%+8px)] rounded-xl border border-slate-200 bg-white p-2 shadow-lg">
-                {searchRecommendations.length > 0 ? (
-                  <div className="space-y-1">
-                    {searchRecommendations.map((doctor) => (
-                      <button
-                        key={doctor.id}
-                        type="button"
-                        onMouseDown={() => {
-                          setSearchQuery(doctor.name);
-                          setShowSuggestions(false);
-                        }}
-                        className="w-full rounded-lg px-3 py-2 text-left hover:bg-slate-100 transition"
-                      >
-                        <p className="text-sm font-medium text-slate-800">
-                          {doctor.name}
-                        </p>
-                        <p className="text-xs text-slate-500">
-                          {doctor.specialty}
-                        </p>
-                      </button>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="px-3 py-2 text-sm text-slate-500">
-                    No recommendations found
-                  </p>
-                )}
-              </div>
-            )}
+              {/* Suggestions Dropdown */}
+              {showSuggestions && searchQuery.trim().length > 0 && (
+                <div className="absolute left-0 right-0 top-[calc(100%+8px)] rounded-xl border border-slate-200 bg-white p-2 shadow-lg">
+                  {searchRecommendations.length > 0 ? (
+                    <div className="space-y-1">
+                      {searchRecommendations.map((doctor) => (
+                        <button
+                          key={doctor.id}
+                          type="button"
+                          onMouseDown={() => {
+                            setSearchQuery(doctor.name);
+                            setShowSuggestions(false);
+                          }}
+                          className="w-full rounded-lg px-3 py-2 text-left hover:bg-slate-100 transition"
+                        >
+                          <p className="text-sm font-medium text-slate-800">
+                            {doctor.name}
+                          </p>
+                          <p className="text-xs text-slate-500">
+                            {doctor.specialty}
+                          </p>
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="px-3 py-2 text-sm text-slate-500">
+                      No recommendations found
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Avatar */}
-        <div className="grid h-9 w-9 place-items-center rounded-full bg-cyan-500 font-semibold text-white">
-          A
-        </div>
+        {isLoggedIn && (
+          <div className="grid h-9 w-9 place-items-center rounded-full bg-cyan-500 font-semibold text-white">
+            A
+          </div>
+        )}
       </div>
     </nav>
   );

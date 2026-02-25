@@ -23,6 +23,7 @@ type PendingOtp = {
 
 const USERS_KEY = "mock_auth_users";
 const OTP_KEY = "mock_auth_pending_otp";
+const SESSION_KEY = "mock_auth_session";
 const OTP_TTL_MS = 5 * 60 * 1000;
 const MOCK_DELAY_MS = 600;
 
@@ -79,6 +80,27 @@ function writePendingOtp(contact: string) {
 function clearPendingOtp() {
   if (!canUseStorage()) return;
   window.localStorage.removeItem(OTP_KEY);
+}
+
+function writeSession(contact: string) {
+  if (!canUseStorage()) return;
+
+  const users = readUsers();
+  const normalizedContactEmail = normalizeEmail(contact);
+  const normalizedContactNumber = normalizeMobile(contact);
+  const user = users.find(
+    (item) =>
+      normalizeEmail(item.email) === normalizedContactEmail ||
+      normalizeMobile(item.number) === normalizedContactNumber
+  );
+
+  const sessionPayload = {
+    userId: user?.id ?? null,
+    authenticatedAt: Date.now(),
+  };
+
+  window.localStorage.setItem(SESSION_KEY, JSON.stringify(sessionPayload));
+  window.dispatchEvent(new Event("mock-auth-changed"));
 }
 
 function normalizeEmail(value: string) {
@@ -154,6 +176,7 @@ export async function verifyOtpMockApi(otp: string) {
     throw new Error("Invalid OTP");
   }
 
+  writeSession(pending.contact);
   clearPendingOtp();
   return { success: true, message: "OTP verified successfully" };
 }
@@ -173,4 +196,9 @@ export async function resendOtpMockApi() {
 export function getPendingOtpContact() {
   const pending = readPendingOtp();
   return pending?.contact ?? null;
+}
+
+export function isMockAuthenticated() {
+  if (!canUseStorage()) return false;
+  return Boolean(window.localStorage.getItem(SESSION_KEY));
 }

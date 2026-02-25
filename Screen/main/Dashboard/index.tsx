@@ -156,8 +156,8 @@ export default function DashboardScreen() {
                 </div>
 
                 <div className="flex gap-2">
-                  <Button onClick={() => setDoctorContextAndNavigate(doctor, "/dashBoard/DoctorDetail", setDoctor, navigate)} className="flex-1 border border-slate-300 bg-white text-slate-800 hover:bg-slate-100">View More</Button>
-                  <Button onClick={() => setDoctorContextAndNavigate(doctor, "/dashBoard/BookAppointment", setDoctor, navigate)} className="flex-1 bg-blue-600 text-white hover:bg-blue-700">Book Appointment</Button>
+                  <Button onClick={() => setDoctorContextAndNavigate(doctor, "/home/dashBoard/DoctorDetail", setDoctor, navigate)} className="flex-1 border border-slate-300 bg-white text-slate-800 hover:bg-slate-100">View More</Button>
+                  <Button onClick={() => setDoctorContextAndNavigate(doctor, "/home/dashBoard/BookAppointment", setDoctor, navigate)} className="flex-1 bg-blue-600 text-white hover:bg-blue-700">Book Appointment</Button>
                 </div>
               </div>
             </Card>

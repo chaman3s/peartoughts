@@ -4,6 +4,7 @@ import { useMemo, useRef, useState } from "react";
 import Button from "@/Components/ui/Button";
 import DoctorHeader from "../DoctorHeader";
 import { useDoctor } from "@/ContextApi/doctorContext";
+import { useAppointment } from "@/ContextApi/appointmentContext";
 import { setDoctorContextAndNavigate, useNavigate } from "@/utils";
 
 type DaySlot = {
@@ -38,6 +39,7 @@ const eveningSlots: TimeSlot[] = [
 
 export default function BookAppointment() {
   const { doctor, setDoctor } = useDoctor();
+  const { addAppointment } = useAppointment();
   const navigate = useNavigate();
   const todayIso = useMemo(() => new Date().toISOString().slice(0, 10), []);
   const [selectedDay, setSelectedDay] = useState(todayIso);
@@ -74,19 +76,6 @@ export default function BookAppointment() {
     if (Number.isNaN(parsedDate.getTime())) return "July, 2023";
     return new Intl.DateTimeFormat("en-US", { month: "long", year: "numeric" }).format(parsedDate);
   }, [selectedDay]);
-
-  const openNativeCalendar = () => {
-    const input = dateInputRef.current as (HTMLInputElement & { showPicker?: () => void }) | null;
-    if (!input) return;
-
-    if (input.showPicker) {
-      input.showPicker();
-      return;
-    }
-
-    input.focus();
-    input.click();
-  };
 
   const isPastDate = (value: string) => {
     if (!value) return false;
@@ -154,6 +143,16 @@ export default function BookAppointment() {
     const appointmentDate = Number.isNaN(selectedDate.getTime())
       ? doctor.appointmentDate
       : new Intl.DateTimeFormat("en-US", { month: "short", day: "2-digit", year: "numeric" }).format(selectedDate);
+    const dayLabel = selectedDay === todayIso ? "Today" : appointmentDate;
+    const slotTime = timeSlot.label.split("-")[0]?.trim() ?? timeSlot.label;
+
+    addAppointment({
+      doctorName: doctor.doctorName,
+      dayLabel,
+      time: slotTime,
+      paid: false,
+      status: "Upcoming",
+    });
 
     setDoctorContextAndNavigate(
       {
@@ -166,7 +165,7 @@ export default function BookAppointment() {
         tags: [],
         availableToday: doctor.status.toLowerCase().includes("available"),
       },
-      "/dashBoard/appointmetReview?status=active",
+      "/home/dashBoard/appointmetReview?status=active",
       setDoctor,
       navigate,
       {
