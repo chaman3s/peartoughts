@@ -5,17 +5,29 @@ import { useSearchParams } from "next/navigation";
 import Button from "@/Components/ui/Button";
 import { useDoctor } from "@/ContextApi/doctorContext";
 import DoctorHeader from "../DoctorHeader";
+import { useNavigate } from "@/utils";
 
 const SUCCESS_STATUSES = ["success", "successful", "active", "confirmed"] as const;
 
 export default function AppointmentStatus() {
   const { doctor } = useDoctor();
+  const navigate = useNavigate();
   const searchParams = useSearchParams();
 
   const isSuccessful = useMemo(() => {
     const rawStatus = searchParams.get("status")?.trim().toLowerCase() ?? "success";
     return SUCCESS_STATUSES.includes(rawStatus as (typeof SUCCESS_STATUSES)[number]);
   }, [searchParams]);
+
+  const handleAddToCalendar = () => {
+    const query = new URLSearchParams({
+      action: "TEMPLATE",
+      text: `Appointment with ${doctor.doctorName}`,
+      details: `Status: ${doctor.status}\nReporting: ${doctor.appointmentDate} ${doctor.appointmentTime}`,
+    });
+
+    window.open(`https://calendar.google.com/calendar/render?${query.toString()}`, "_blank", "noopener,noreferrer");
+  };
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-blue-50/40">
@@ -53,6 +65,7 @@ export default function AppointmentStatus() {
 
             <Button
               type="button"
+              onClick={handleAddToCalendar}
               className="w-fit rounded-2xl bg-cyan-100 px-6 py-3 text-base font-semibold text-cyan-600 hover:bg-cyan-200"
             >
               Add to calendar
@@ -70,6 +83,7 @@ export default function AppointmentStatus() {
 
             <Button
               type="button"
+              onClick={() => navigate("/dashBoard")}
               className="mt-12 w-full rounded-2xl bg-cyan-500 py-4 text-xl font-semibold text-white hover:bg-cyan-600"
             >
               View My Appointment
@@ -83,6 +97,7 @@ export default function AppointmentStatus() {
 
             <Button
               type="button"
+              onClick={() => navigate("/dashBoard/BookAppointment")}
               className="w-full rounded-2xl bg-cyan-500 py-4 text-xl font-semibold text-white hover:bg-cyan-600"
             >
               Yes
