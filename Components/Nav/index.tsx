@@ -21,7 +21,7 @@ type DoctorCard = {
 export default function NavBar() {
   const [searchQuery, setSearchQuery] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(() => isMockAuthenticated());
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const { toggle } = useSidebar();
 
   const doctors = useMemo<DoctorCard[]>(() => [
@@ -114,7 +114,7 @@ export default function NavBar() {
 
   useEffect(() => {
     const syncAuthState = () => setIsLoggedIn(isMockAuthenticated());
-
+    syncAuthState()
     window.addEventListener("storage", syncAuthState);
     window.addEventListener("mock-auth-changed", syncAuthState as EventListener);
 
