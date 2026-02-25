@@ -24,6 +24,7 @@ export type AppointmentItem = {
 type AppointmentContextValue = {
   appointments: AppointmentItem[];
   addAppointment: (appointment: Omit<AppointmentItem, "id" | "tokenNo"> & Partial<Pick<AppointmentItem, "id" | "tokenNo">>) => void;
+  cancelAppointment: (appointmentId: string) => void;
 };
 
 const AppointmentContext = createContext<AppointmentContextValue | null>(null);
@@ -61,10 +62,21 @@ export function AppointmentProvider({ children }: { children: ReactNode }) {
     });
   };
 
+  const cancelAppointment: AppointmentContextValue["cancelAppointment"] = (appointmentId) => {
+    setAppointments((prev) =>
+      prev.map((item) =>
+        item.id === appointmentId && item.status === "Upcoming"
+          ? { ...item, status: "Canceled" }
+          : item
+      )
+    );
+  };
+
   const value = useMemo(
     () => ({
       appointments,
       addAppointment,
+      cancelAppointment,
     }),
     [appointments]
   );

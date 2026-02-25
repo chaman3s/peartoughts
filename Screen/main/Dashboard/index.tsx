@@ -9,6 +9,7 @@ import { useDoctor } from "@/ContextApi/doctorContext";
 
 type DoctorCard = {
   id: string;
+  doctorImage:string;
   name: string;
   specialty: string;
   experience: string;
@@ -31,6 +32,7 @@ const filterTags = [
 const doctors: DoctorCard[] = [
   {
     id: "doc-1",
+    doctorImage:"https://images.pexels.com/photos/4173251/pexels-photo-4173251.jpeg",
     name: "Dr. Amelia Clark",
     specialty: "Cardiologist",
     experience: "12 years",
@@ -41,6 +43,7 @@ const doctors: DoctorCard[] = [
   },
   {
     id: "doc-2",
+    doctorImage:"https://images.pexels.com/photos/4173251/pexels-photo-4173251.jpeg",
     name: "Dr. Noah Rivera",
     specialty: "Dermatologist",
     experience: "9 years",
@@ -51,6 +54,7 @@ const doctors: DoctorCard[] = [
   },
   {
     id: "doc-3",
+    doctorImage:"https://images.pexels.com/photos/4173251/pexels-photo-4173251.jpeg",
     name: "Dr. Sophia Nguyen",
     specialty: "Pediatrician",
     experience: "10 years",
@@ -61,6 +65,7 @@ const doctors: DoctorCard[] = [
   },
   {
     id: "doc-4",
+    doctorImage:"https://images.pexels.com/photos/4173251/pexels-photo-4173251.jpeg",
     name: "Dr. Ethan Brooks",
     specialty: "Neurologist",
     experience: "15 years",
@@ -71,6 +76,7 @@ const doctors: DoctorCard[] = [
   },
   {
     id: "doc-5",
+    doctorImage:"https://images.pexels.com/photos/4173251/pexels-photo-4173251.jpeg",
     name: "Dr. Mia Patel",
     specialty: "Dentist",
     experience: "8 years",
@@ -81,6 +87,7 @@ const doctors: DoctorCard[] = [
   },
   {
     id: "doc-6",
+    doctorImage:"https://images.pexels.com/photos/4173251/pexels-photo-4173251.jpeg",
     name: "Dr. Lucas Hall",
     specialty: "General Physician",
     experience: "11 years",
@@ -129,7 +136,7 @@ export default function DashboardScreen() {
           {filteredDoctors.map((doctor) => (
             <Card key={doctor.id} className="overflow-hidden border border-slate-200 bg-white text-slate-900 shadow-sm">
               <div className="relative h-44 w-full overflow-hidden">
-                <Image src={logo} alt={doctor.name} fill className="object-cover" />
+                <Image src={doctor.doctorImage} alt={doctor.name} fill className="object-cover  object-top" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-transparent" />
                 <p className="absolute bottom-3 left-3 rounded-md bg-black/70 px-2 py-1 text-xs text-white">{doctor.specialty}</p>
               </div>

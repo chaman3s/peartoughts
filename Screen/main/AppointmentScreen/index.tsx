@@ -5,6 +5,7 @@ import Image from "@/Components/ui/Image";
 import Button from "@/Components/ui/Button";
 import { useAppointment, type AppointmentStatus } from "@/ContextApi/appointmentContext";
 import logo from "@/assets/img/logo.jpg";
+import {useNavigate} from "@/utils"
 
 type AppointmentTab = AppointmentStatus;
 
@@ -16,8 +17,9 @@ const statusStyles: Record<AppointmentStatus, string> = {
   Canceled: "border-rose-200 bg-rose-50 text-rose-700",
 };
 
+
 export default function AppointmentScreen() {
-  const { appointments } = useAppointment();
+  const { appointments, cancelAppointment } = useAppointment();
   const [activeTab, setActiveTab] = useState<AppointmentTab>("Upcoming");
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const menuRef = useRef<HTMLDivElement | null>(null);
@@ -39,9 +41,10 @@ export default function AppointmentScreen() {
   const list = appointments.filter((item) => item.status === activeTab);
   const paidCount = appointments.filter((item) => item.paid).length;
   const totalCount = appointments.length;
+  const navigate = useNavigate();
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-slate-50 via-[#eef8ff] to-white">
+    <main className="min-h-screen bg-gradient-to-b from-slate-50 via-[#eef8ff] to-white" >
       <section className="mx-auto w-full max-w-5xl px-4 pb-12 pt-6 md:px-6">
         <div className="rounded-3xl border border-white/80 bg-white/85 p-5 shadow-[0_12px_35px_-24px_rgba(14,116,144,0.55)] backdrop-blur-sm md:p-6">
           <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
@@ -99,6 +102,9 @@ export default function AppointmentScreen() {
         <div className="mt-5 space-y-4">
           {list.map((item) => {
             const menuOpen = openMenuId === item.id;
+            const cardActions = item.status === "Upcoming"
+              ? ["View", "Reschedule", "Quick Query", "Cancel Appointment"]
+              : ["View", "Quick Query"];
             return (
               <article
                 key={item.id}
@@ -158,12 +164,22 @@ export default function AppointmentScreen() {
                         ref={menuRef}
                         className="absolute right-0 top-10 z-20 w-52 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl"
                       >
-                        {["View", "Reschedule", "Quick Query"].map((action) => (
+                        {cardActions.map((action) => (
                           <button
                             key={action}
                             type="button"
-                            onClick={() => setOpenMenuId(null)}
-                            className="block w-full border-b border-slate-100 px-4 py-2.5 text-left text-sm font-medium text-slate-700 transition last:border-b-0 hover:bg-slate-50"
+                            onClick={() => {
+                              if (action === "Cancel Appointment") {
+                                cancelAppointment(item.id);
+                              }
+                              else if(action === "View"){
+                                navigate("/home/appointment/appointmentDetail")
+                              }
+                              setOpenMenuId(null);
+                            }}
+                            className={`block w-full border-b border-slate-100 px-4 py-2.5 text-left text-sm font-medium transition last:border-b-0 hover:bg-slate-50 ${
+                              action === "Cancel Appointment" ? "text-rose-600 hover:bg-rose-50" : "text-slate-700"
+                            }`}
                           >
                             {action}
                           </button>
