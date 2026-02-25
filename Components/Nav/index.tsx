@@ -5,6 +5,8 @@ import Image from "next/image";
 import logo from "@/assets/img/logo.jpg";
 import SearchBar from "../SearchBar";
 import { useSidebar } from "../../ContextApi/sidebar-context";
+import Link from "next/link";
+import Button from "../ui/Button";
 import { isMockAuthenticated } from "@/services/mockAuthApi";
 
 type DoctorCard = {
@@ -208,10 +210,14 @@ export default function NavBar() {
         )}
 
         {/* Avatar */}
-        {isLoggedIn && (
+        {isLoggedIn ? (
           <div className="grid h-9 w-9 place-items-center rounded-full bg-cyan-500 font-semibold text-white">
             A
           </div>
+        ) : (
+          <Link href="/" passHref>
+            <Button className="text-sm font-medium !py-1.5">Login</Button>
+          </Link>
         )}
       </div>
     </nav>
