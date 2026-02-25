@@ -1,5 +1,10 @@
 import AppointmentStatus from "@/Screen/main/AppointmentReview"
+import { Suspense } from "react"
 export default function AppointmentStatusPage(){
-    return <AppointmentStatus/>
+    return(
+        <Suspense fallback={<div>Loading...</div>}>
+ <AppointmentStatus/>
+        </Suspense>
+    )
     
 };

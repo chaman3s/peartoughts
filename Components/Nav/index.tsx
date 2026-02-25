@@ -24,6 +24,7 @@ export default function NavBar() {
   const [searchQuery, setSearchQuery] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isClient, setIsClient] = useState(false);
   const { toggle } = useSidebar();
 
   const doctors = useMemo<DoctorCard[]>(() => [
@@ -115,6 +116,7 @@ export default function NavBar() {
   }, [searchQuery, doctors]);
 
   useEffect(() => {
+    setIsClient(true);
     const syncAuthState = () => setIsLoggedIn(isMockAuthenticated());
     syncAuthState()
     window.addEventListener("storage", syncAuthState);
@@ -155,7 +157,7 @@ export default function NavBar() {
         </div>
 
         {/* Search Section */}
-        {isLoggedIn && (
+        {isClient && isLoggedIn && (
           <div className="hidden flex-1 items-center justify-center md:flex">
             <div className="relative w-full max-w-2xl">
               <SearchBar
@@ -210,11 +212,11 @@ export default function NavBar() {
         )}
 
         {/* Avatar */}
-        {isLoggedIn ? (
+        {isClient && isLoggedIn ? (
           <div className="grid h-9 w-9 place-items-center rounded-full bg-cyan-500 font-semibold text-white">
             A
           </div>
-        ) : (
+        ) : isClient && (
           <Link href="/" passHref>
             <Button className="text-sm font-medium !py-1.5">Login</Button>
           </Link>
