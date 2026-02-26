@@ -1,6 +1,6 @@
 "use client";
 
-import AppointmentDetailScreen from "@/Screen/main/AppointmentDetailScreen";
+import AppointmentDetailScreen from "@/Screen/user/main/AppointmentDetailScreen";
 import { useAppointment } from "@/ContextApi/appointmentContext";
 import { useDoctor } from "@/ContextApi/doctorContext";
 import { usePatient } from "@/ContextApi/patientContext";

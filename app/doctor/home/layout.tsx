@@ -1,5 +1,5 @@
 import DoctorDashboardProvider from "@/ContextApi/doctor-dashboard-provider";
-import SideBar from "../../../Components/sideBar";
+import  Sidebar  from "@/Screen/doctor/layouts/SideBar"
 import { SidebarProvider } from "@/ContextApi/sidebar-context";
 import NavBar from "@/Components/Nav";
 export default function HomeLayout({
@@ -12,7 +12,7 @@ export default function HomeLayout({
     <NavBar/>
   <DoctorDashboardProvider>
     <section className="mx-auto flex w-full max-w-[1600px]">
-     <SideBar/>
+     <Sidebar/>
       <div className="min-w-0 flex-1">{children}</div>
     </section>
   );

@@ -1,4 +1,4 @@
-import AppointmentScreen from "@/Screen/main/AppointmentScreen";
+import AppointmentScreen from "@/Screen/user/main/AppointmentScreen";
 
 export default function AppointmentsPage() {
   return <AppointmentScreen />;

@@ -1,4 +1,4 @@
-import OtpVerification from "@/Screen/auth/OtpVerification";
+import OtpVerification from "@/Screen/doctor/auth/OtpVerification";
 
 export default function OtpVerificationPage() {
   return <OtpVerification />;
