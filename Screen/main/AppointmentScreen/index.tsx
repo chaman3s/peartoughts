@@ -173,7 +173,7 @@ export default function AppointmentScreen() {
                                 cancelAppointment(item.id);
                               }
                               else if(action === "View"){
-                                navigate("/home/appointment/appointmentDetail")
+                                navigate(`/home/appointments/appointmentDetail/${item.tokenNo}`)
                               }
                               setOpenMenuId(null);
                             }}

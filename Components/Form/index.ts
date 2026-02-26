@@ -1,1 +1,1 @@
-export { default as LebelFrom} from "./Formwithlabel"
+export { default as LabelForm} from "./LabelForm"

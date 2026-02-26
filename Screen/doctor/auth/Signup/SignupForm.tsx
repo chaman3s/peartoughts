@@ -8,10 +8,9 @@ import VerticalContainer from "@/Components/ui/Container/VerticalContainer";
 import { LabelForm } from "@/Components/Form";
 import Button from "@/Components/ui/Button";
 import Image from "@/Components/ui/Image";
-import logo from "@/assets/img/logo.jpg";
 import useApiCall from "@/hooks/useApiCall";
 import { signupMockApi, type SignupPayload } from "@/services/mockAuthApi";
-
+import doctorLogo from '@/assets/img/doctorLogo.svg'
 const STORAGE_KEY = "signup_payload";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -20,15 +19,17 @@ function validateSignupData(data: SignupPayload) {
   if (data.fullname.trim().length < 2) return "Enter a valid full name";
   if (!EMAIL_REGEX.test(data.email.trim())) return "Enter a valid email";
   if (!/^\d{10}$/.test(data.number.trim())) return "Enter a valid 10-digit mobile number";
+  if (data.password.length < 6) return "Password must be at least 6 characters long";
   return null;
 }
 
-export default function SignUpForm() {
+export default function DoctorSignUpForm() {
   const router = useRouter();
   const [formData, setFormData] = useState<SignupPayload>({
     fullname: "",
     email: "",
     number: "",
+    password: "",
   });
   const [formError, setFormError] = useState<string>("");
 
@@ -61,39 +62,40 @@ export default function SignUpForm() {
       fullname: "",
       email: "",
       number: "",
+      password: "",
     });
-    router.push("/otpverification");
+    router.push("/doctor/otpverification");
   };
 
   return (
-    <div className="flex h-[100dvh] items-center justify-center overflow-hidden px-3 sm:px-5 bg-gradient-to-br from-blue-50 to-indigo-100">
-      <Card className="w-full max-w-md animate-slideIn shadow-lg hover:shadow-xl transition-shadow duration-300">
+    <div className="flex h-full items-center justify-center  px-3 sm:px-5 bg-gradient-to-br from-blue-50 to-indigo-100">
+      <Card className="w-full  mt-10 mb-10 max-w-md animate-slideIn shadow-lg hover:shadow-xl transition-shadow duration-300">
         <form onSubmit={handleSubmit}>
           <VerticalContainer className="gap-2 sm:gap-3 p-3 sm:p-4">
             {/* Logo Section */}
             <div className="text-center animate-fadeIn">
               <Image
-                src={logo}
+                src={doctorLogo}
                 alt="Logo"
-                width={50}
-                height={50}
+                width={150}
+                height={150}
                 className="mx-auto mb-1 animate-fadeInUp transform transition-transform duration-300 hover:scale-110"
                 style={{ animationDelay: "0s" }}
               />
-              <p className="text-xs sm:text-sm text-gray-600">Welcome back</p>
+              <p className="-mt-8 text-xs sm:text-sm text-gray-600">:Join Us </p>
             </div>
 
             {/* Form Section */}
             <div className="animate-fadeInUp" style={{ animationDelay: "0.1s" }}>
               <LabelForm
-                label={"Signup"}
+                label={"Doctor Signup"}
                 error={formError || signupApi.error || undefined}
                 inputArr={[
                   {
                     id: "fullname",
                     type: "text",
                     placeholder: "Enter fullname",
-                    label :"Full Name",
+                    label: "Full Name",
                     value: formData.fullname,
                     onChange: (event) => handleInputChange("fullname", event.target.value),
                     clearable: true,
@@ -103,7 +105,7 @@ export default function SignUpForm() {
                     id: "email",
                     type: "email",
                     placeholder: "Enter email",
-                    label :"Email",
+                    label: "Email",
                     value: formData.email,
                     onChange: (event) => handleInputChange("email", event.target.value),
                     clearable: true,
@@ -112,18 +114,24 @@ export default function SignUpForm() {
                   {
                     id: "number",
                     type: "text",
-                    placeholder: "Enter number",
-                    label :"Mobile",
+                    placeholder: "Enter mobile number",
+                    label: "Mobile",
                     value: formData.number,
                     onChange: (event) => handleInputChange("number", event.target.value),
                     clearable: true,
                     onClear: () => handleInputChange("number", ""),
                   },
+                  {
+                    id: "password",
+                    type: "password",
+                    placeholder: "Enter password",
+                    label: "Password",
+                    value: formData.password,
+                    onChange: (event) => handleInputChange("password", event.target.value),
+                  }
                 ]}
               />
             </div>
-
-            {/* Button Section */}
             <Button
               type="submit"
               loading={signupApi.loading}
@@ -135,6 +143,7 @@ export default function SignUpForm() {
 
             <button
               type="button"
+              onClick={() => console.log("Sign up with Google clicked")}
               className="w-full border border-gray-300 rounded-xl py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors duration-200 flex items-center justify-center gap-2 animate-fadeInUp"
               style={{ animationDelay: "0.25s" }}
             >
@@ -150,8 +159,8 @@ export default function SignUpForm() {
             {/* Sign Up Link */}
             <p className="text-center text-xs text-gray-600 animate-fadeInUp" style={{ animationDelay: "0.3s" }}>
               Already have an account?{" "}
-              <Link href="/" className="text-blue-600 hover:text-blue-700 font-semibold transition-colors">
-                login
+              <Link href="/doctor/login" className="text-blue-600 hover:text-blue-700 font-semibold transition-colors">
+                Login
               </Link>
             </p>
           </VerticalContainer>

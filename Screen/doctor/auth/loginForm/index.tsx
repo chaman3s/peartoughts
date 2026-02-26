@@ -4,24 +4,26 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Card } from "@/Components/ui/Card";
 import VerticalContainer from "@/Components/ui/Container/VerticalContainer";
-import {LabelForm} from "@/Components/Form";
+import { LabelForm } from "@/Components/Form";
 import Button from "@/Components/ui/Button";
 import useApiCall from "@/hooks/useApiCall";
 import { loginMockApi } from "@/services/mockAuthApi";
 import Link from "next/link";
 import Image from '@/Components/ui/Image'
 import logo from '@/assets/img/logo.jpg'
+import doctorLogo from '@/assets/img/doctorLogo.svg'
 
-export default function LoginForm({ error }: { error?: string }) {
+export default function DoctorLoginForm({ error }: { error?: string }) {
   const router = useRouter();
   const [formData, setFormData] = useState({
     emailOrMobile: "",
+    password: "",
   });
   const [formError, setFormError] = useState("");
 
   const loginApi = useApiCall(loginMockApi);
 
-  const handleInputChange = (key: "emailOrMobile", value: string) => {
+  const handleInputChange = (key: string, value: string) => {
     setFormData((prev) => ({ ...prev, [key]: value }));
   };
 
@@ -33,36 +35,40 @@ export default function LoginForm({ error }: { error?: string }) {
       setFormError("Enter email/mobile");
       return;
     }
+    if (!formData.password.trim()) {
+      setFormError("Enter password");
+      return;
+    }
 
-    const response = await loginApi.execute(formData);
+    const response = await loginApi.execute({emailOrMobile: formData.emailOrMobile});
     if (!response?.success) return;
 
-    setFormData({ emailOrMobile: "" });
-    router.push("/otpverification");
+    setFormData({ emailOrMobile: "", password: ""});
+    router.push("/doctor/otpverification");
   };
 
   return (
-    <div className="flex h-[100dvh] items-center justify-center overflow-hidden px-3 sm:px-6 lg:px-8 bg-gradient-to-br from-blue-50 to-indigo-100">
-      <Card className="w-full max-w-md animate-slideIn shadow-lg hover:shadow-xl transition-shadow duration-300">
+    <div className="flex h-full items-center justify-center  px-3 sm:px-6 lg:px-8 bg-gradient-to-br from-blue-50 to-indigo-100">
+      <Card className="mt-5 mb-10 w-full max-w-md animate-slideIn shadow-lg hover:shadow-xl transition-shadow duration-300">
         <form onSubmit={handleSubmit}>
           <VerticalContainer className="gap-3 sm:gap-4 p-4 sm:p-6">
           {/* Logo Section */}
           <div className="text-center animate-fadeIn">
             <Image
-              src={logo}
+              src={doctorLogo}
               alt="Logo"
-              width={72}
-              height={72}
-              className="mx-auto mb-4 animate-fadeInUp transform transition-transform duration-300 hover:scale-110"
+              width={150}
+              height={150}
+              className="mx-auto animate-fadeInUp transform transition-transform duration-300 hover:scale-110"
               style={{ animationDelay: "0s" }}
             />
-            <p className="text-sm sm:text-base text-gray-600">Welcome back</p>
+            <p className="-mt-5 text-sm sm:text-base text-gray-600">Welcome back</p>
           </div>
 
           {/* Form Section */}
           <div className="animate-fadeInUp" style={{ animationDelay: "0.1s" }}>
             <LabelForm
-              label={"Login"}
+              label={"DoctorLogin"}
               error={formError || loginApi.error || error}
               inputArr={[
 
@@ -75,6 +81,15 @@ export default function LoginForm({ error }: { error?: string }) {
                   onChange: (event) => handleInputChange("emailOrMobile", event.target.value),
                   clearable: true,
                   onClear: () => handleInputChange("emailOrMobile", ""),
+                },
+                
+                {
+                  id: "password",
+                  type: "password",
+                  placeholder: "Enter password",
+                  label :"password",
+                  value: formData.password,
+                  onChange: (event) => handleInputChange("password", event.target.value),
                 },
               ]}
             />
@@ -96,6 +111,9 @@ export default function LoginForm({ error }: { error?: string }) {
               <input type="checkbox" className="mr-2 rounded accent-blue-500" />
               Remember Me
             </label>
+            <a href="#" className="text-blue-600 hover:text-blue-700 font-semibold transition-colors">
+              Forgot Password?
+            </a>
           </div>
 
           {/* Divider */}
@@ -119,7 +137,7 @@ export default function LoginForm({ error }: { error?: string }) {
           {/* Sign Up Link */}
           <p className="text-center text-xs sm:text-sm text-gray-600 animate-fadeInUp" style={{ animationDelay: "0.6s" }}>
             Don&apos;t have an account?{" "}
-            <Link href="/signup" className="text-blue-600 hover:text-blue-700 font-semibold transition-colors">
+            <Link href="/doctor/signup" className="text-blue-600 hover:text-blue-700 font-semibold transition-colors">
               Sign up
             </Link>
           </p>
