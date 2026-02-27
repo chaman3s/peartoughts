@@ -22,7 +22,7 @@ const menuItems: SideBarItem[] = [
     ),
   },
     {
-    id: "doctor-detail",
+    id: "profile",
     label: "Profile",
     href: "/doctor/home/profile",
     icon: (

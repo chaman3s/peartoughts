@@ -1,5 +1,5 @@
 import DoctorDashboardProvider from "@/ContextApi/doctor-dashboard-provider";
-import  Sidebar  from "@/Screen/doctor/layouts/SideBar"
+import  Sidebar  from "@/Screen/doctor/layouts/DoctorSideBar"
 import { SidebarProvider } from "@/ContextApi/sidebar-context";
 import NavBar from "@/Components/Nav";
 export default function HomeLayout({
@@ -8,6 +8,7 @@ export default function HomeLayout({
   children: React.ReactNode;
 }>) {
   return (
+    <>
   <SidebarProvider>
     <NavBar/>
   <DoctorDashboardProvider>
@@ -18,5 +19,6 @@ export default function HomeLayout({
   );
     </DoctorDashboardProvider>
     </SidebarProvider>
+    </>
   );
 }
