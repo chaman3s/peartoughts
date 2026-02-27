@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import TokenAutoComplete, {
   Option,
 } from "@/Components/ui/Select/TokenAutoComplete";
@@ -26,15 +26,27 @@ const dayOptions: Option[] = [
   { value: "sat", label: "Saturday" },
   { value: "sun", label: "Sunday" },
 ];
+type ScheduleTableProps={
+    id: number;
+  days: string[];
+  slots: TimeSlot[];
+  onChange:(rows:Row[])=>void
 
-export default function ScheduleTable() {
+}
+
+export default function ScheduleTable({onChange}:ScheduleTableProps) {
+   
   const [rows, setRows] = useState<Row[]>([
     {
       id: 1,
       days: [],
       slots: [{ id: Date.now(), startTime: "", endTime: "" }],
     },
+
   ]);
+   useEffect(()=>{
+        onChange(rows)
+    },[rows])
 
   // update days
   const updateRowDays = (rowId: number, days: string[]) => {
@@ -42,6 +54,7 @@ export default function ScheduleTable() {
       prev.map((row) =>
         row.id === rowId ? { ...row, days } : row
       )
+
     );
   };
 
