@@ -1,6 +1,6 @@
 ﻿"use client";
 import { setDoctorContextAndNavigate, useNavigate } from "@/utils";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState, useSyncExternalStore } from "react";
 import { Card } from "@/Components/ui/Card";
 import Button from "@/Components/ui/Button";
 import Image from "@/Components/ui/Image";
@@ -98,6 +98,50 @@ const defaultDoctors: DoctorCard[] = [
   },
 ];
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function toDoctorCard(value: unknown): DoctorCard | null {
+  if (!isRecord(value)) return null;
+
+  const id = typeof value.id === "string" ? value.id.trim() : "";
+  const name = typeof value.name === "string" ? value.name.trim() : "";
+  const specialty = typeof value.specialty === "string" ? value.specialty.trim() : "";
+
+  if (!id || !name || !specialty) return null;
+
+  const doctorImage =
+    typeof value.doctorImage === "string" && value.doctorImage.trim()
+      ? value.doctorImage.trim()
+      : "https://images.pexels.com/photos/4173251/pexels-photo-4173251.jpeg";
+  const experience = typeof value.experience === "string" ? value.experience : "0 years";
+  const rating = typeof value.rating === "string" ? value.rating : "0";
+  const description =
+    typeof value.description === "string" && value.description.trim()
+      ? value.description
+      : `Specialist in ${specialty}.`;
+  const tags = Array.isArray(value.tags)
+    ? value.tags.filter((tag): tag is string => typeof tag === "string" && tag.trim().length > 0)
+    : [];
+  const availableToday = typeof value.availableToday === "boolean" ? value.availableToday : false;
+  const doctorEmail =
+    typeof value.doctorEmail === "string" && value.doctorEmail.trim() ? value.doctorEmail : undefined;
+
+  return {
+    id,
+    doctorImage,
+    name,
+    specialty,
+    experience,
+    rating,
+    description,
+    tags,
+    availableToday,
+    doctorEmail,
+  };
+}
+
 function getMergedDoctors(): DoctorCard[] {
   if (typeof window === "undefined") return defaultDoctors;
 
@@ -108,9 +152,9 @@ function getMergedDoctors(): DoctorCard[] {
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed)) return defaultDoctors;
 
-    const storedDoctors = parsed.filter((item): item is DoctorCard => {
-      return item && typeof item === "object" && typeof item.id === "string" && typeof item.name === "string";
-    });
+    const storedDoctors = parsed
+      .map((item) => toDoctorCard(item))
+      .filter((item): item is DoctorCard => item !== null);
 
     if (!storedDoctors.length) return defaultDoctors;
 
@@ -126,12 +170,32 @@ function getMergedDoctors(): DoctorCard[] {
   }
 }
 
-export default function DashboardScreen() {
+let cachedDoctorRaw: string | null | undefined;
+let cachedDoctorSnapshot: DoctorCard[] = defaultDoctors;
 
+function getMergedDoctorsSnapshot(): DoctorCard[] {
+  if (typeof window === "undefined") return defaultDoctors;
+
+  const raw = window.localStorage.getItem("doctor_data");
+  if (raw === cachedDoctorRaw) return cachedDoctorSnapshot;
+
+  cachedDoctorRaw = raw;
+  cachedDoctorSnapshot = getMergedDoctors();
+  return cachedDoctorSnapshot;
+}
+
+const subscribeDoctors = () => () => undefined;
+const getServerDoctorsSnapshot = () => defaultDoctors;
+
+export default function DashboardScreen() {
   const navigate = useNavigate();
   const { setDoctor } = useDoctor();
   const [activeTag, setActiveTag] = useState<(typeof filterTags)[number]>("All");
-  const [doctors] = useState<DoctorCard[]>(getMergedDoctors);
+  const doctors = useSyncExternalStore(
+    subscribeDoctors,
+    getMergedDoctorsSnapshot,
+    getServerDoctorsSnapshot
+  );
   const getStars = (rating: string) => "\u2605".repeat(Math.round(Number(rating)));
 
   const filteredDoctors = useMemo(() => {
@@ -164,7 +228,10 @@ export default function DashboardScreen() {
 
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
           {filteredDoctors.map((doctor) => (
-            <Card key={doctor.id} className="overflow-hidden border border-slate-200 bg-white text-slate-900 shadow-sm">
+            <Card
+              key={doctor.doctorEmail?.trim().toLowerCase() || `${doctor.id}-${doctor.name}`}
+              className="overflow-hidden border border-slate-200 bg-white text-slate-900 shadow-sm"
+            >
               <div className="relative h-44 w-full overflow-hidden">
                 <Image src={doctor.doctorImage} alt={doctor.name} fill className="object-cover  object-top" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-transparent" />
