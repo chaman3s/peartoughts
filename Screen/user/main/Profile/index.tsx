@@ -408,10 +408,10 @@ export default function UserProfileScreen() {
   return (
     <main className="min-h-screen bg-slate-100 p-4 md:p-6">
       {showSuccessPopup && (
-        <div className="fixed right-4 top-4 z-50 w-full max-w-xl overflow-hidden rounded-2xl border border-emerald-200 bg-emerald-100 shadow-lg">
-          <div className="flex items-center gap-4 border-l-8 border-emerald-500 px-5 py-5">
-            <CheckCircle2 size={36} className="text-emerald-600" />
-            <p className="text-3xl font-medium text-emerald-700">Profile updated successfully!</p>
+        <div className="fixed right-3 top-3 z-50 w-[calc(100%-1.5rem)] max-w-md overflow-hidden rounded-xl border border-emerald-200 bg-emerald-100 shadow-md">
+          <div className="flex items-center gap-3 border-l-4 border-emerald-500 px-4 py-3">
+            <CheckCircle2 size={24} className="shrink-0 text-emerald-600" />
+            <p className="text-base font-semibold text-emerald-700 sm:text-lg">Profile updated successfully!</p>
           </div>
         </div>
       )}
