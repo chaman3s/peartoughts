@@ -26,13 +26,38 @@ const dayOptions: Option[] = [
   { value: "sat", label: "Saturday" },
   { value: "sun", label: "Sunday" },
 ];
+
+const dayTokenMap: Record<string, string> = {
+  mon: "mon",
+  monday: "mon",
+  tue: "tue",
+  tues: "tue",
+  tuesday: "tue",
+  wed: "wed",
+  wednesday: "wed",
+  thu: "thu",
+  thur: "thu",
+  thurs: "thu",
+  thursday: "thu",
+  fri: "fri",
+  friday: "fri",
+  sat: "sat",
+  saturday: "sat",
+  sun: "sun",
+  sunday: "sun",
+};
+
+function normalizeDayToken(value: string) {
+  return dayTokenMap[value.trim().toLowerCase()] ?? value.trim().toLowerCase();
+}
+
 type ScheduleTableProps={
   onChange: (rows: Row[]) => void;
   allowedDays?: string[];
 };
 
 export default function ScheduleTable({ onChange, allowedDays }: ScheduleTableProps) {
-  const allowedDaySet = new Set((allowedDays ?? []).map((day) => day.trim().toLowerCase()));
+  const allowedDaySet = new Set((allowedDays ?? []).map((day) => normalizeDayToken(day)));
   const tableDayOptions =
     allowedDaySet.size > 0
       ? dayOptions.filter((option) => allowedDaySet.has(option.value))
