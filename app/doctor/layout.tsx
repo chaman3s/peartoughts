@@ -12,10 +12,9 @@ export default function HomeLayout({
   return (
     <SidebarProvider>
       <DoctorProfileProvider>
-        <NavBar />
         <DoctorDashboardProvider>
           <section className="mx-auto flex w-full max-w-[1600px]">
-            <DoctorSideBar />
+            
             <div className="min-w-0 flex-1">{children}</div>
           </section>
         </DoctorDashboardProvider>
