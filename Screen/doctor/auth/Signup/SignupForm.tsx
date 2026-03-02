@@ -19,7 +19,6 @@ function validateSignupData(data: SignupPayload) {
   if (data.fullname.trim().length < 2) return "Enter a valid full name";
   if (!EMAIL_REGEX.test(data.email.trim())) return "Enter a valid email";
   if (!/^\d{10}$/.test(data.number.trim())) return "Enter a valid 10-digit mobile number";
-  if (data.password.length < 6) return "Password must be at least 6 characters long";
   return null;
 }
 
@@ -29,7 +28,6 @@ export default function DoctorSignUpForm() {
     fullname: "",
     email: "",
     number: "",
-    password: "",
   });
   const [formError, setFormError] = useState<string>("");
 
@@ -62,7 +60,6 @@ export default function DoctorSignUpForm() {
       fullname: "",
       email: "",
       number: "",
-      password: "",
     });
     router.push("/doctor/otpverification");
   };
@@ -120,14 +117,6 @@ export default function DoctorSignUpForm() {
                     onChange: (event) => handleInputChange("number", event.target.value),
                     clearable: true,
                     onClear: () => handleInputChange("number", ""),
-                  },
-                  {
-                    id: "password",
-                    type: "password",
-                    placeholder: "Enter password",
-                    label: "Password",
-                    value: formData.password,
-                    onChange: (event) => handleInputChange("password", event.target.value),
                   }
                 ]}
               />
