@@ -4,6 +4,7 @@ import React, { useState, useMemo, useEffect } from "react";
 import { useDoctor } from "@/ContextApi/DoctorProfileContext";
 import DoctorHeader from "@/Components/DoctorHeader";
 import SlotForm, { SlotSettings } from "./SlotForm";
+import DoctorHeaderForm from "./DoctorHeaderForm";
 import { Card } from "@/Components/ui/Card";
 import { VerticalContainer } from "@/Components/ui/Container";
 import Text from "@/Components/ui/Text";
@@ -66,8 +67,9 @@ function getCustomTimeLabel(settings: SlotSettings) {
 /* ---------------- COMPONENT ---------------- */
 
 export default function DoctorProfile() {
-  const { doctor } = useDoctor();
-  const [editSlot, setEditSlot] = useState(true);
+  const { doctor, updateDoctor } = useDoctor();
+  const [editSlot, setEditSlot] = useState(false);
+  const [editHeader, setEditHeader] = useState(false);
 
   const [slotSetting, setSlotSetting] = useState<SlotSettings>({
     days: ["mon", "tue", "wed", "thu", "fri"],
@@ -105,16 +107,27 @@ export default function DoctorProfile() {
     <div className="bg-gray-100 min-h-screen w-full">
       {/* Header */}
       <div className="mt-5">
-        <DoctorHeader
-          specialTitle={{ value: "Edit Profile", onClick: () => {} }}
-          status={doctor.status}
-          doctorName={doctor.doctorName}
-          specialist={doctor.specialist || "not defined"}
-          doctorDegree={doctor.doctorDegree || "not defined"}
-          clinicLocation={doctor.clinicLocation || "not defined"}
-          doctorImage={doctor.doctorImage}
-          stats={doctor.stats || []}
-        />
+        {editHeader ? (
+          <DoctorHeaderForm
+            value={doctor}
+            onCancel={() => setEditHeader(false)}
+            onSave={(updates) => {
+              updateDoctor(updates);
+              setEditHeader(false);
+            }}
+          />
+        ) : (
+          <DoctorHeader
+            specialTitle={{ value: "Edit Profile", onClick: () => setEditHeader(true) }}
+            status={doctor.status}
+            doctorName={doctor.doctorName}
+            specialist={doctor.specialist || "not defined"}
+            doctorDegree={doctor.doctorDegree || "not defined"}
+            clinicLocation={doctor.clinicLocation || "not defined"}
+            doctorImage={doctor.doctorImage}
+            stats={doctor.stats || []}
+          />
+        )}
       </div>
 
       {/* Body */}

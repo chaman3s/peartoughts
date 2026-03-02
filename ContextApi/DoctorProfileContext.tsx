@@ -46,7 +46,8 @@ const defaultDoctor: DoctorHeaderData = {
   stats: [
     { id: "1", value: "1500+", label: "Patients Treated", icon: null },
     { id: "2", value: "12", label: "Years of Experience", icon: null },
-    { id: "3", value: "4.9/5.0", label: "Average Rating", icon: null },
+    { id: "3", value: "0", label: "Average Rating", icon: null },
+    { id: "4", value: "4,942", label: "Reviews", icon: null },
   ],
 };
 

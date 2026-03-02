@@ -43,7 +43,7 @@ const doctorData: DoctorHeaderData = {
     },
     {
       id: "rating",
-      value: "4.8",
+      value: "0",
       label: "rating",
       icon: (
         <svg viewBox="0 0 24 24" className="h-5 w-5 text-blue-500" aria-hidden="true">
