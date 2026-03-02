@@ -1,10 +1,9 @@
 ﻿"use client";
 import { setDoctorContextAndNavigate, useNavigate } from "@/utils";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Card } from "@/Components/ui/Card";
 import Button from "@/Components/ui/Button";
 import Image from "@/Components/ui/Image";
-import logo from "@/assets/img/logo.jpg";
 import { useDoctor } from "@/ContextApi/doctorContext";
 
 type DoctorCard = {
@@ -17,6 +16,7 @@ type DoctorCard = {
   description: string;
   tags: string[];
   availableToday: boolean;
+  doctorEmail?: string;
 };
 
 const filterTags = [
@@ -29,7 +29,7 @@ const filterTags = [
   "Available Today",
 ] as const;
 
-const doctors: DoctorCard[] = [
+const defaultDoctors: DoctorCard[] = [
   {
     id: "doc-1",
     doctorImage:"https://images.pexels.com/photos/4173251/pexels-photo-4173251.jpeg",
@@ -98,10 +98,40 @@ const doctors: DoctorCard[] = [
   },
 ];
 
+function getMergedDoctors(): DoctorCard[] {
+  if (typeof window === "undefined") return defaultDoctors;
+
+  const raw = window.localStorage.getItem("doctor_data");
+  if (!raw) return defaultDoctors;
+
+  try {
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return defaultDoctors;
+
+    const storedDoctors = parsed.filter((item): item is DoctorCard => {
+      return item && typeof item === "object" && typeof item.id === "string" && typeof item.name === "string";
+    });
+
+    if (!storedDoctors.length) return defaultDoctors;
+
+    const byKey = new Map<string, DoctorCard>();
+    [...defaultDoctors, ...storedDoctors].forEach((item) => {
+      const key = item.doctorEmail?.trim().toLowerCase() || item.id;
+      byKey.set(key, item);
+    });
+
+    return Array.from(byKey.values());
+  } catch {
+    return defaultDoctors;
+  }
+}
+
 export default function DashboardScreen() {
+
   const navigate = useNavigate();
   const { setDoctor } = useDoctor();
   const [activeTag, setActiveTag] = useState<(typeof filterTags)[number]>("All");
+  const [doctors] = useState<DoctorCard[]>(getMergedDoctors);
   const getStars = (rating: string) => "\u2605".repeat(Math.round(Number(rating)));
 
   const filteredDoctors = useMemo(() => {
@@ -110,7 +140,7 @@ export default function DashboardScreen() {
       return doctors.filter((doctor) => doctor.availableToday);
     }
     return doctors.filter((doctor) => doctor.specialty === activeTag);
-  }, [activeTag]);
+  }, [activeTag, doctors]);
 
   return (
     <main className="min-h-screen bg-white text-slate-900">

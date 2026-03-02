@@ -15,7 +15,7 @@ type PatientFormState = {
   relationship: string;
 };
 
-const relationshipOptions = ["Son", "Brother", "Sister", "Father", "Mother", "Spouse"];
+const relationshipOptions = ["Son", "Brother", "Sister", "Father", "Mother", "Spouse","Me"];
 const genderOptions = ["Male", "Female", "Other"];
 
 type PatientFormErrors = Partial<Record<keyof PatientFormState, string>>;

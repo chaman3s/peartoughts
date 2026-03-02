@@ -9,6 +9,19 @@ import { Card } from "@/Components/ui/Card";
 import { VerticalContainer } from "@/Components/ui/Container";
 import Text from "@/Components/ui/Text";
 
+type DashboardDoctor = {
+  id: string;
+  doctorImage: string;
+  name: string;
+  specialty: string;
+  experience: string;
+  rating: string;
+  description: string;
+  tags: string[];
+  availableToday: boolean;
+  doctorEmail?: string;
+};
+
 /* ---------------- LABEL MAPS ---------------- */
 
 const dayLabelMap: Record<string, string> = {
@@ -39,6 +52,67 @@ function arraysEqual(a: string[], b: string[]) {
   const as = [...a].sort().join(",");
   const bs = [...b].sort().join(",");
   return as === bs;
+}
+
+function getStatValue(stats: { label: string; value: string }[], key: "experience" | "rating") {
+  const stat = stats.find((item) => item.label.toLowerCase().includes(key));
+  if (!stat?.value) return "0";
+  return stat.value;
+}
+
+function normalizeExperience(value: string) {
+  const trimmed = value.trim();
+  if (!trimmed) return "0 years";
+  return /year/i.test(trimmed) ? trimmed : `${trimmed} years`;
+}
+
+function normalizeRating(value: string) {
+  const match = value.match(/(\d+(\.\d+)?)/);
+  return match?.[1] ?? "0";
+}
+
+function syncDoctorDataToLocalStorage(doctor: {
+  doctorName: string;
+  doctorImage: string;
+  specialist: string;
+  status: string;
+  doctorEmail: string;
+  stats: { label: string; value: string }[];
+}, tags: string[]) {
+  if (typeof window === "undefined") return;
+
+  const storageKey = "doctor_data";
+  const raw = window.localStorage.getItem(storageKey);
+  const parsed = raw ? JSON.parse(raw) : [];
+  const doctorList: DashboardDoctor[] = Array.isArray(parsed) ? parsed : [];
+  const mail = doctor.doctorEmail.trim().toLowerCase();
+
+  const nextDoctor: DashboardDoctor = {
+    id: `doc-${doctorList.length + 1}`,
+    doctorImage: doctor.doctorImage,
+    name: doctor.doctorName,
+    specialty: doctor.specialist,
+    experience: normalizeExperience(getStatValue(doctor.stats, "experience")),
+    rating: normalizeRating(getStatValue(doctor.stats, "rating")),
+    description: `Specialist in ${doctor.specialist || "general care"}.`,
+    tags: tags.length ? tags : ["Online", "Top Rated"],
+    availableToday: doctor.status.toLowerCase().includes("online") || doctor.status.toLowerCase().includes("available"),
+    doctorEmail: mail,
+  };
+
+  const existingIndex = doctorList.findIndex((item) => (item.doctorEmail ?? "").trim().toLowerCase() === mail);
+
+  if (existingIndex >= 0) {
+    doctorList[existingIndex] = {
+      ...doctorList[existingIndex],
+      ...nextDoctor,
+      id: doctorList[existingIndex].id || nextDoctor.id,
+    };
+  } else {
+    doctorList.push(nextDoctor);
+  }
+
+  window.localStorage.setItem(storageKey, JSON.stringify(doctorList));
 }
 
 /* ⭐ derive readable custom time (UPDATED for nested slots) */
@@ -111,8 +185,17 @@ export default function DoctorProfile() {
           <DoctorHeaderForm
             value={doctor}
             onCancel={() => setEditHeader(false)}
-            onSave={(updates) => {
+            onSave={(updates, tags) => {
               updateDoctor(updates);
+              const nextDoctorData = {
+                doctorName: updates.doctorName ?? doctor.doctorName,
+                doctorImage: updates.doctorImage ?? doctor.doctorImage,
+                specialist: updates.specialist ?? doctor.specialist,
+                status: updates.status ?? doctor.status,
+                doctorEmail: updates.doctorEmail ?? doctor.doctorEmail,
+                stats: updates.stats ?? doctor.stats,
+              };
+              syncDoctorDataToLocalStorage(nextDoctorData, tags);
               setEditHeader(false);
             }}
           />

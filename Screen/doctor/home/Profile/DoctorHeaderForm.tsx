@@ -8,7 +8,7 @@ import type { DoctorHeaderData } from "@/ContextApi/DoctorProfileContext";
 
 type Props = {
   value: DoctorHeaderData;
-  onSave: (updates: Partial<DoctorHeaderData>) => void;
+  onSave: (updates: Partial<DoctorHeaderData>, tags: string[]) => void;
   onCancel: () => void;
 };
 
@@ -38,7 +38,29 @@ function getStatValueByLabel(stats: DoctorHeaderData["stats"], pattern: RegExp) 
   return found?.value ?? "";
 }
 
+function getSavedTagsByEmail(email: string) {
+  if (typeof window === "undefined") return "";
+  if (!email.trim()) return "";
+
+  const raw = window.localStorage.getItem("doctor_data");
+  if (!raw) return "";
+
+  try {
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return "";
+
+    const match = parsed.find(
+      (item) => (item?.doctorEmail ?? "").trim().toLowerCase() === email.trim().toLowerCase()
+    );
+
+    return Array.isArray(match?.tags) ? match.tags.join(", ") : "";
+  } catch {
+    return "";
+  }
+}
+
 export default function DoctorHeaderForm({ value, onSave, onCancel }: Props) {
+  const existingTags = getSavedTagsByEmail(value.doctorEmail ?? "");
   const [form, setForm] = useState({
     status: value.status ?? "",
     doctorName: value.doctorName ?? "",
@@ -50,6 +72,7 @@ export default function DoctorHeaderForm({ value, onSave, onCancel }: Props) {
     doctorPhone: String(value.doctorPhone ?? ""),
     patientsCount: getStatValueByLabel(value.stats, /patient/i).replace(/[^\d]/g, ""),
     experienceYears: getStatValueByLabel(value.stats, /experience/i).replace(/[^\d]/g, ""),
+    tags: existingTags || "Online, Top Rated",
   });
   const [errors, setErrors] = useState<FieldErrors>({});
 
@@ -126,6 +149,11 @@ export default function DoctorHeaderForm({ value, onSave, onCancel }: Props) {
       ...otherStats,
     ];
 
+    const parsedTags = form.tags
+      .split(",")
+      .map((tag) => tag.trim())
+      .filter(Boolean);
+
     onSave({
       status: form.status.trim(),
       doctorName: form.doctorName.trim(),
@@ -136,7 +164,7 @@ export default function DoctorHeaderForm({ value, onSave, onCancel }: Props) {
       doctorEmail: form.doctorEmail.trim(),
       doctorPhone: form.doctorPhone.trim() ? Number(form.doctorPhone.trim()) : 0,
       stats: nextStats,
-    });
+    }, parsedTags);
   };
 
   return (
@@ -270,6 +298,17 @@ export default function DoctorHeaderForm({ value, onSave, onCancel }: Props) {
                 placeholder="12"
               />
               {errors.experienceYears && <Text className="text-xs text-red-600">{errors.experienceYears}</Text>}
+            </label>
+
+            <label className="space-y-1 md:col-span-2">
+              <Text className="text-sm text-slate-600">Tags (comma separated)</Text>
+              <input
+                type="text"
+                value={form.tags}
+                onChange={(e) => updateField("tags", e.target.value)}
+                className="w-full rounded-md border border-slate-300 px-3 py-2 outline-none focus:border-blue-500"
+                placeholder="Heart Care, Online, Top Rated"
+              />
             </label>
           </div>
 

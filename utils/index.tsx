@@ -7,6 +7,7 @@ import type { DoctorHeaderData } from "@/ContextApi/doctorContext";
 
 export type DoctorCard = {
   id: string;
+  doctorImage: string;
   name: string;
   specialty: string;
   experience: string;
@@ -14,6 +15,7 @@ export type DoctorCard = {
   description: string;
   tags: string[];
   availableToday: boolean;
+  doctorEmail?: string;
 };
 
 type NavigateFn = (pageUrl: string) => void;
@@ -40,7 +42,7 @@ export const setDoctorContextAndNavigate = (
     specialist: doctor.specialty,
     doctorDegree: prev.doctorDegree,
     clinicLocation: prev.clinicLocation,
-    doctorImage: prev.doctorImage,
+    doctorImage: doctor.doctorImage || prev.doctorImage,
     stats: prev.stats.map((stat) => {
       if (stat.id === "experience") return { ...stat, value: doctor.experience, label: "experience" };
       if (stat.id === "rating") return { ...stat, value: doctor.rating, label: "rating" };
