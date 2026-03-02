@@ -1,13 +1,14 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import Image from "next/image";
 import logo from "@/assets/img/logo.jpg";
 import SearchBar from "../SearchBar";
 import { useSidebar } from "../../ContextApi/sidebar-context";
 import Link from "next/link";
 import Button from "../ui/Button";
-import { isMockAuthenticated } from "@/services/mockAuthApi";
+import { isMockAuthenticated, logoutMockApi } from "@/services/mockAuthApi";
+import { usePathname, useRouter } from "next/navigation";
 
 type DoctorCard = {
   id: string;
@@ -23,9 +24,30 @@ type DoctorCard = {
 export default function NavBar() {
   const [searchQuery, setSearchQuery] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [isClient, setIsClient] = useState(false);
+  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const { toggle } = useSidebar();
+  const profileMenuRef = useRef<HTMLDivElement | null>(null);
+  const router = useRouter();
+  const pathname = usePathname();
+  const isDoctorRoute = pathname?.startsWith("/doctor");
+  const profileHref = isDoctorRoute ? "/doctor/home/profile" : "/home/Profile";
+  const loginHref = isDoctorRoute ? "/doctor/login" : "/login";
+  const isLoggedIn = useSyncExternalStore(
+    (onStoreChange) => {
+      if (typeof window === "undefined") return () => undefined;
+
+      const handler = () => onStoreChange();
+      window.addEventListener("storage", handler);
+      window.addEventListener("mock-auth-changed", handler as EventListener);
+
+      return () => {
+        window.removeEventListener("storage", handler);
+        window.removeEventListener("mock-auth-changed", handler as EventListener);
+      };
+    },
+    () => isMockAuthenticated(),
+    () => false
+  );
 
   const doctors = useMemo<DoctorCard[]>(() => [
     {
@@ -116,17 +138,17 @@ export default function NavBar() {
   }, [searchQuery, doctors]);
 
   useEffect(() => {
-    setIsClient(true);
-    const syncAuthState = () => setIsLoggedIn(isMockAuthenticated());
-    syncAuthState()
-    window.addEventListener("storage", syncAuthState);
-    window.addEventListener("mock-auth-changed", syncAuthState as EventListener);
+    if (!isProfileMenuOpen) return;
 
-    return () => {
-      window.removeEventListener("storage", syncAuthState);
-      window.removeEventListener("mock-auth-changed", syncAuthState as EventListener);
+    const closeProfileMenu = (event: MouseEvent) => {
+      if (!profileMenuRef.current?.contains(event.target as Node)) {
+        setIsProfileMenuOpen(false);
+      }
     };
-  }, []);
+
+    document.addEventListener("mousedown", closeProfileMenu);
+    return () => document.removeEventListener("mousedown", closeProfileMenu);
+  }, [isProfileMenuOpen]);
 
   return (
     <nav className="sticky top-0 z-20 border-b border-slate-200 bg-white ">
@@ -157,7 +179,7 @@ export default function NavBar() {
         </div>
 
         {/* Search Section */}
-        {isClient && isLoggedIn && (
+        {isLoggedIn && (
           <div className="hidden flex-1 items-center justify-center md:flex">
             <div className="relative w-full max-w-2xl">
               <SearchBar
@@ -212,11 +234,43 @@ export default function NavBar() {
         )}
 
         {/* Avatar */}
-        {isClient && isLoggedIn ? (
-          <div className="grid h-9 w-9 place-items-center rounded-full bg-cyan-500 font-semibold text-white">
-            A
+        {isLoggedIn ? (
+          <div ref={profileMenuRef} className="relative">
+            <button
+              type="button"
+              onClick={() => setIsProfileMenuOpen((prev) => !prev)}
+              className="grid h-9 w-9 place-items-center rounded-full bg-cyan-500 font-semibold text-white"
+              aria-haspopup="menu"
+              aria-expanded={isProfileMenuOpen}
+              aria-label="Profile menu"
+            >
+              A
+            </button>
+
+            {isProfileMenuOpen && (
+              <div className="absolute right-0 top-11 z-30 w-44 overflow-hidden rounded-xl border border-slate-200 bg-white py-1 shadow-lg">
+                <Link
+                  href={profileHref}
+                  onClick={() => setIsProfileMenuOpen(false)}
+                  className="block px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100"
+                >
+                  View Profile
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => {
+                    logoutMockApi();
+                    setIsProfileMenuOpen(false);
+                    router.push(loginHref);
+                  }}
+                  className="block w-full px-4 py-2 text-left text-sm font-medium text-rose-600 hover:bg-rose-50"
+                >
+                  Logout
+                </button>
+              </div>
+            )}
           </div>
-        ) : isClient && (
+        ) : (
           <Link href="/" passHref>
             <Button className="text-sm font-medium !py-1.5">Login</Button>
           </Link>

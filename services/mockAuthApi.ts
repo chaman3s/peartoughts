@@ -202,3 +202,9 @@ export function isMockAuthenticated() {
   if (!canUseStorage()) return false;
   return Boolean(window.localStorage.getItem(SESSION_KEY));
 }
+
+export function logoutMockApi() {
+  if (!canUseStorage()) return;
+  window.localStorage.removeItem(SESSION_KEY);
+  window.dispatchEvent(new Event("mock-auth-changed"));
+}
