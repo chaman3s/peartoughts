@@ -1,11 +1,12 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState, useSyncExternalStore } from "react";
 import Button from "@/Components/ui/Button";
 import DoctorHeader from "../DoctorHeader";
 import { useDoctor } from "@/ContextApi/doctorContext";
 import { useAppointment } from "@/ContextApi/appointmentContext";
 import { setDoctorContextAndNavigate, useNavigate } from "@/utils";
+import type { PersistedSlotSettings, SlotTimeType } from "@/types/slotSettings";
 
 type DaySlot = {
   id: string;
@@ -17,9 +18,11 @@ type TimeSlot = {
   id: string;
   label: string;
   disabled?: boolean;
+  startMinutes?: number;
+  endMinutes?: number;
 };
 
-const morningSlots: TimeSlot[] = [
+const fallbackMorningSlots: TimeSlot[] = [
   { id: "m-0930", label: "09:30 AM - 9:45AM" },
   { id: "m-1000", label: "10:00 AM - 10:15AM" },
   { id: "m-1030", label: "10:30 AM - 10:45AM" },
@@ -30,29 +33,260 @@ const morningSlots: TimeSlot[] = [
   { id: "m-0100", label: "01:00 PM - 01:15PM" },
 ];
 
-const eveningSlots: TimeSlot[] = [
+const fallbackEveningSlots: TimeSlot[] = [
   { id: "e-1130", label: "1:30 PM - 1:45PM" },
   { id: "e-1200", label: "2:00 PM - 2:15PM" },
   { id: "e-0100a", label: "03:00 PM - 03:15PM" },
   { id: "e-0100b", label: "04:00 PM - 04:15PM" },
 ];
 
+type StoredDoctorRecord = {
+  name?: string;
+  specialty?: string;
+  slotSetting?: PersistedSlotSettings;
+};
+
+const dayKeyByWeekDay = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"] as const;
+const dayTokenMap: Record<string, string> = {
+  mon: "mon",
+  monday: "mon",
+  tue: "tue",
+  tues: "tue",
+  tuesday: "tue",
+  wed: "wed",
+  wednesday: "wed",
+  thu: "thu",
+  thur: "thu",
+  thurs: "thu",
+  thursday: "thu",
+  fri: "fri",
+  friday: "fri",
+  sat: "sat",
+  saturday: "sat",
+  sun: "sun",
+  sunday: "sun",
+};
+const presetRangeMap: Record<Exclude<SlotTimeType, "custom">, [string, string]> = {
+  "24": ["00:00", "24:00"],
+  office: ["09:00", "17:00"],
+  morning: ["06:00", "14:00"],
+  evening: ["14:00", "22:00"],
+};
+
+let cachedDoctorDataRaw: string | null | undefined;
+let cachedDoctorDataSnapshot: StoredDoctorRecord[] = [];
+const EMPTY_DOCTOR_DATA: StoredDoctorRecord[] = [];
+
+const subscribeDoctorData = () => () => undefined;
+const getServerDoctorDataSnapshot = () => EMPTY_DOCTOR_DATA;
+
+function normalizeText(value: string | undefined) {
+  return (value ?? "").trim().toLowerCase();
+}
+
+function normalizeDayToken(token: string) {
+  return dayTokenMap[token.trim().toLowerCase()] ?? token.trim().toLowerCase();
+}
+
+function toLocalIsoDate(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function toMinutes(value: string) {
+  const match = value.match(/^(\d{1,2}):(\d{2})$/);
+  if (!match) return null;
+  const hour = Number(match[1]);
+  const minute = Number(match[2]);
+  if (!Number.isInteger(hour) || !Number.isInteger(minute)) return null;
+  if (hour < 0 || hour > 24 || minute < 0 || minute > 59) return null;
+  if (hour === 24 && minute !== 0) return null;
+  return hour * 60 + minute;
+}
+
+function toTwelveHour(minutes: number) {
+  const bounded = ((minutes % (24 * 60)) + (24 * 60)) % (24 * 60);
+  const hours24 = Math.floor(bounded / 60);
+  const mins = bounded % 60;
+  const meridiem = hours24 >= 12 ? "PM" : "AM";
+  const hours12 = hours24 % 12 === 0 ? 12 : hours24 % 12;
+  return `${String(hours12).padStart(2, "0")}:${String(mins).padStart(2, "0")} ${meridiem}`;
+}
+
+function isPersistedSlotSettings(value: unknown): value is PersistedSlotSettings {
+  if (!value || typeof value !== "object") return false;
+  const data = value as PersistedSlotSettings;
+  return (
+    Array.isArray(data.days) &&
+    typeof data.timeType === "string" &&
+    Array.isArray(data.customSlots) &&
+    typeof data.note === "string" &&
+    typeof data.slotDuration === "number" &&
+    typeof data.slotPrice === "number"
+  );
+}
+
+function isValidPersistedSlotSetting(setting: PersistedSlotSettings) {
+  if (!Array.isArray(setting.days) || setting.days.length === 0) return false;
+  if (setting.slotDuration <= 0) return false;
+
+  if (setting.timeType !== "custom") {
+    return Boolean(presetRangeMap[setting.timeType]);
+  }
+
+  return setting.customSlots.some(
+    (group) =>
+      Array.isArray(group.days) &&
+      group.days.length > 0 &&
+      Array.isArray(group.slots) &&
+      group.slots.some((slot) => {
+        const start = toMinutes(slot.startTime);
+        const end = toMinutes(slot.endTime);
+        return start !== null && end !== null && end > start;
+      })
+  );
+}
+
+function getSlotUpdatedAt(setting: PersistedSlotSettings) {
+  if (!setting.updatedAt) return 0;
+  const time = new Date(setting.updatedAt).getTime();
+  return Number.isNaN(time) ? 0 : time;
+}
+
+function getDoctorDataSnapshot() {
+  if (typeof window === "undefined") return [];
+
+  const raw = window.localStorage.getItem("doctor_data");
+  if (raw === cachedDoctorDataRaw) return cachedDoctorDataSnapshot;
+
+  cachedDoctorDataRaw = raw;
+  try {
+    const parsed = raw ? JSON.parse(raw) : [];
+    cachedDoctorDataSnapshot = Array.isArray(parsed) ? parsed : [];
+  } catch {
+    cachedDoctorDataSnapshot = [];
+  }
+
+  return cachedDoctorDataSnapshot;
+}
+
+function derivePresetSlots(
+  timeType: Exclude<SlotTimeType, "custom">,
+  duration: number
+): TimeSlot[] {
+  const [startRaw, endRaw] = presetRangeMap[timeType];
+  const start = toMinutes(startRaw);
+  const end = toMinutes(endRaw);
+  if (start === null || end === null || end <= start) return [];
+
+  const step = duration > 0 ? duration : 15;
+  const slots: TimeSlot[] = [];
+
+  for (let cursor = start; cursor + step <= end; cursor += step) {
+    const next = cursor + step;
+    slots.push({
+      id: `preset-${timeType}-${cursor}-${next}`,
+      label: `${toTwelveHour(cursor)} - ${toTwelveHour(next)}`,
+      startMinutes: cursor,
+      endMinutes: next,
+    });
+  }
+
+  return slots;
+}
+
+function deriveCustomSlots(setting: PersistedSlotSettings, dayKey: string): TimeSlot[] {
+  const duration = Number.isFinite(setting.slotDuration) && setting.slotDuration > 0 ? setting.slotDuration : 15;
+
+  return setting.customSlots.flatMap((group) => {
+    const normalizedDays = (group.days ?? []).map(normalizeDayToken);
+    if (!normalizedDays.includes(dayKey)) return [];
+
+    return group.slots.flatMap((slot) => {
+      const start = toMinutes(slot.startTime);
+      const end = toMinutes(slot.endTime);
+      if (start === null || end === null || end <= start) return [];
+
+      const derived: TimeSlot[] = [];
+      for (let cursor = start; cursor + duration <= end; cursor += duration) {
+        const next = cursor + duration;
+        derived.push({
+          id: `custom-${group.id}-${slot.id}-${cursor}-${next}`,
+          label: `${toTwelveHour(cursor)} - ${toTwelveHour(next)}`,
+          startMinutes: cursor,
+          endMinutes: next,
+        });
+      }
+
+      return derived;
+    });
+  });
+}
+
 export default function BookAppointment() {
   const { doctor, setDoctor } = useDoctor();
   const { appointments, addAppointment } = useAppointment();
   const navigate = useNavigate();
-  const todayIso = useMemo(() => new Date().toISOString().slice(0, 10), []);
+  const doctorData = useSyncExternalStore(
+    subscribeDoctorData,
+    getDoctorDataSnapshot,
+    getServerDoctorDataSnapshot
+  );
+  const todayIso = useMemo(() => toLocalIsoDate(new Date()), []);
   const [selectedDay, setSelectedDay] = useState(todayIso);
-  const [selectedMorningSlot, setSelectedMorningSlot] = useState<string | null>(null);
-  const [selectedEveningSlot, setSelectedEveningSlot] = useState<string | null>(null);
+  const [selectedSlotId, setSelectedSlotId] = useState<string | null>(null);
   const [isCalendarDialogOpen, setIsCalendarDialogOpen] = useState(false);
   const [calendarDate, setCalendarDate] = useState(todayIso);
   const [calendarError, setCalendarError] = useState("");
   const dateInputRef = useRef<HTMLInputElement | null>(null);
+  const selectedDayKey = useMemo(() => {
+    const date = new Date(`${selectedDay}T00:00:00`);
+    if (Number.isNaN(date.getTime())) return "";
+    return dayKeyByWeekDay[date.getDay()] ?? "";
+  }, [selectedDay]);
+  const persistedSlotSetting = useMemo(() => {
+    const candidates = doctorData
+      .filter((item) => {
+        if (!item || typeof item !== "object") return false;
+        return (
+          normalizeText(item.name) === normalizeText(doctor.doctorName) &&
+          normalizeText(item.specialty) === normalizeText(doctor.specialist)
+        );
+      })
+      .map((item) => item.slotSetting)
+      .filter((setting): setting is PersistedSlotSettings => isPersistedSlotSettings(setting))
+      .filter((setting) => isValidPersistedSlotSetting(setting))
+      .sort((a, b) => getSlotUpdatedAt(b) - getSlotUpdatedAt(a));
 
-  const selectedSlot = selectedMorningSlot ?? selectedEveningSlot;
-  const allSlots = [...morningSlots, ...eveningSlots];
-  const selectedSlotLabel = allSlots.find((slot) => slot.id === selectedSlot)?.label ?? "Not selected";
+    return candidates[0] ?? null;
+  }, [doctorData, doctor.doctorName, doctor.specialist]);
+  const usePersistedSlots = Boolean(persistedSlotSetting);
+  const isConfiguredDay = useMemo(() => {
+    if (!persistedSlotSetting) return true;
+    return persistedSlotSetting.days.map(normalizeDayToken).includes(selectedDayKey);
+  }, [persistedSlotSetting, selectedDayKey]);
+  const derivedSlots = useMemo<TimeSlot[]>(() => {
+    if (!persistedSlotSetting || !selectedDayKey || !isConfiguredDay) return [];
+
+    if (persistedSlotSetting.timeType === "custom") {
+      return deriveCustomSlots(persistedSlotSetting, selectedDayKey);
+    }
+
+    return derivePresetSlots(persistedSlotSetting.timeType, persistedSlotSetting.slotDuration);
+  }, [persistedSlotSetting, selectedDayKey, isConfiguredDay]);
+  const morningSlots = useMemo<TimeSlot[]>(() => {
+    if (!usePersistedSlots) return fallbackMorningSlots;
+    return derivedSlots.filter((slot) => (slot.startMinutes ?? 24 * 60) < 14 * 60);
+  }, [usePersistedSlots, derivedSlots]);
+  const eveningSlots = useMemo<TimeSlot[]>(() => {
+    if (!usePersistedSlots) return fallbackEveningSlots;
+    return derivedSlots.filter((slot) => (slot.startMinutes ?? 0) >= 14 * 60);
+  }, [usePersistedSlots, derivedSlots]);
+  const allSlots = useMemo(() => [...morningSlots, ...eveningSlots], [morningSlots, eveningSlots]);
+  const selectedSlot = allSlots.find((slot) => slot.id === selectedSlotId) ?? null;
+  const selectedSlotLabel = selectedSlot?.label ?? "Not selected";
   const isTodaySelected = selectedDay === todayIso;
   const daySlots = useMemo<DaySlot[]>(() => {
     const base = new Date(`${calendarDate}T00:00:00`);
@@ -61,7 +295,7 @@ export default function BookAppointment() {
     return Array.from({ length: 5 }, (_, index) => {
       const nextDate = new Date(base);
       nextDate.setDate(base.getDate() + index);
-      const iso = nextDate.toISOString().slice(0, 10);
+      const iso = toLocalIsoDate(nextDate);
       const dayLabel = new Intl.DateTimeFormat("en-US", { weekday: "short" }).format(nextDate).toUpperCase();
       return {
         id: iso,
@@ -143,14 +377,11 @@ export default function BookAppointment() {
       return;
     }
 
-    const timeSlot = allSlots.find((slot) => slot.id === selectedSlot);
-
-    if (!timeSlot) return;
-    if (isSlotPassed(timeSlot.label)) {
+    if (isSlotPassed(selectedSlot.label)) {
       setCalendarError("Selected time slot has already passed.");
       return;
     }
-    if (isAlreadyBooked(timeSlot.label)) {
+    if (isAlreadyBooked(selectedSlot.label)) {
       setCalendarError("This slot is already booked for the selected day.");
       return;
     }
@@ -161,7 +392,7 @@ export default function BookAppointment() {
       ? doctor.appointmentDate
       : new Intl.DateTimeFormat("en-US", { month: "short", day: "2-digit", year: "numeric" }).format(selectedDate);
     const dayLabel = selectedDay === todayIso ? "Today" : appointmentDate;
-    const slotTime = timeSlot.label.split("-")[0]?.trim() ?? timeSlot.label;
+    const slotTime = selectedSlot.label.split("-")[0]?.trim() ?? selectedSlot.label;
 
     addAppointment({
       doctorName: doctor.doctorName,
@@ -175,6 +406,7 @@ export default function BookAppointment() {
     setDoctorContextAndNavigate(
       {
         id: "book-appointment",
+        doctorImage: doctor.doctorImage,
         name: doctor.doctorName,
         specialty: doctor.specialist,
         experience: experienceValue,
@@ -189,7 +421,7 @@ export default function BookAppointment() {
       {
         status: "Active",
         appointmentDate,
-        appointmentTime: timeSlot.label,
+        appointmentTime: selectedSlot.label,
       }
     );
   };
@@ -265,7 +497,7 @@ export default function BookAppointment() {
           <h4 className="mt-6 text-lg font-semibold text-slate-900 sm:text-xl">Select slot</h4>
           <div className="mt-3 grid grid-cols-2 gap-3">
             {morningSlots.map((slot) => {
-              const isSelected = selectedMorningSlot === slot.id;
+              const isSelected = selectedSlotId === slot.id;
               const isTimePassed = isSlotPassed(slot.label);
               const isBooked = isAlreadyBooked(slot.label);
               const isDisabled = Boolean(slot.disabled) || isTimePassed || isBooked;
@@ -276,8 +508,7 @@ export default function BookAppointment() {
                   disabled={isDisabled}
                   onClick={() => {
                     if (isDisabled) return;
-                    setSelectedMorningSlot(slot.id);
-                    setSelectedEveningSlot(null);
+                    setSelectedSlotId(slot.id);
                   }}
                   className={`rounded-xl border px-3 py-2.5 text-sm font-medium transition sm:px-4 sm:py-3 sm:text-base ${
                     isDisabled
@@ -297,7 +528,7 @@ export default function BookAppointment() {
           <h4 className="mt-6 text-lg font-semibold text-slate-900 sm:text-xl">Evening Slot</h4>
           <div className="mt-3 grid grid-cols-2 gap-3">
             {eveningSlots.map((slot) => {
-              const isSelected = selectedEveningSlot === slot.id;
+              const isSelected = selectedSlotId === slot.id;
               const isBooked = isAlreadyBooked(slot.label);
               const isDisabled = isSlotPassed(slot.label) || isBooked;
               return (
@@ -307,8 +538,7 @@ export default function BookAppointment() {
                   disabled={isDisabled}
                   onClick={() => {
                     if (isDisabled) return;
-                    setSelectedEveningSlot(slot.id);
-                    setSelectedMorningSlot(null);
+                    setSelectedSlotId(slot.id);
                   }}
                   className={`rounded-xl border px-3 py-2.5 text-sm font-medium transition sm:px-4 sm:py-3 sm:text-base ${
                     isDisabled
@@ -325,6 +555,17 @@ export default function BookAppointment() {
             })}
           </div>
 
+          {usePersistedSlots && !isConfiguredDay && (
+            <p className="mt-4 text-sm font-medium text-rose-600">
+              No slots available for this day.
+            </p>
+          )}
+          {usePersistedSlots && isConfiguredDay && allSlots.length === 0 && (
+            <p className="mt-4 text-sm font-medium text-slate-500">
+              No slots available.
+            </p>
+          )}
+
           <div className="mt-5 rounded-xl border border-cyan-200 bg-cyan-50 px-4 py-3">
             <p className="text-sm font-medium text-slate-600">Selected Time Slot</p>
             <p className="text-base font-semibold text-cyan-700">{selectedSlotLabel}</p>
@@ -334,7 +575,7 @@ export default function BookAppointment() {
           <Button
             type="button"
             onClick={handleBookAppointment}
-            disabled={!selectedSlot}
+            disabled={!selectedSlot || (usePersistedSlots && (!isConfiguredDay || allSlots.length === 0))}
             className="mt-6 w-full rounded-2xl bg-cyan-500 py-3 text-lg font-semibold text-white hover:bg-cyan-600 disabled:bg-cyan-300 sm:text-xl"
           >
             Book appointment

@@ -4,35 +4,18 @@ import Text from "@/Components/ui/Text";
 import { Card } from "@/Components/ui/Card";
 import { VerticalContainer } from "@/Components/ui/Container";
 import Select from "@/Components/ui/Select";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import TokenAutoComplete from "@/Components/ui/Select/TokenAutoComplete";
 import ScheduleTable from "@/Components/ScheduleTable";
+import type { PersistedSlotSettings, SlotCustomGroup, SlotTimeType } from "@/types/slotSettings";
 
-/* ---------------- TYPES ---------------- */
-
-export type SlotRow = {
-  id: number;
-  day: string;
-  startTime: string;
-  endTime: string;
-};
-
-export type SlotSettings = {
-  days: string[];
-  timeType: string;
-  customSlots: SlotRow[];
-  note: string;
-  slotDuration: number;
-  slotPrice: number;
-};
+export type SlotSettings = PersistedSlotSettings;
 
 type Props = {
   value: SlotSettings;
   onChange: (data: SlotSettings) => void;
-  onsubmit: (open: boolean) => void;
+  onsubmit: (open: boolean, payload?: SlotSettings) => void;
 };
-
-/* ---------------- CONSTANTS ---------------- */
 
 const dayOptions = [
   { value: "mon", label: "Monday" },
@@ -51,29 +34,24 @@ const dayPresets: Record<string, string[]> = {
   twf: ["tue", "wed", "fri"],
 };
 
-/* ---------------- COMPONENT ---------------- */
+function getDayPresetKey(days: string[]) {
+  const normalize = (arr: string[]) => [...arr].sort().join(",");
+  const current = normalize(days);
+  const matched = Object.entries(dayPresets).find(([, presetDays]) => normalize(presetDays) === current);
+  return matched?.[0] ?? "custom";
+}
 
 export default function SlotForm({ value, onChange, onsubmit }: Props) {
   const [days, setDays] = useState<string[]>(value.days);
-  const [isCustomDays, setIsCustomDays] = useState(false);
-  const [timePreset, setTimePreset] = useState<string>(value.timeType);
-  const [scheduleRows, setScheduleRows] = useState<SlotRow[]>(
-    value.customSlots
-  );
-  useEffect(()=>{
-    console.log("scheduleRows:",scheduleRows)
-  },[scheduleRows])
-
-  /* sync */
-  useEffect(() => {
-    setDays(value.days);
-    setTimePreset(value.timeType);
-    setScheduleRows(value.customSlots);
-  }, [value]);
-
-  /* handlers */
+  const [dayPreset, setDayPreset] = useState<string>(getDayPresetKey(value.days));
+  const [isCustomDays, setIsCustomDays] = useState(getDayPresetKey(value.days) === "custom");
+  const [timePreset, setTimePreset] = useState<SlotTimeType>(value.timeType);
+  const [scheduleRows, setScheduleRows] = useState<SlotCustomGroup[]>(value.customSlots);
+  const [slotDuration, setSlotDuration] = useState<number>(value.slotDuration);
+  const [slotPrice, setSlotPrice] = useState<number>(value.slotPrice);
 
   const handleDayPreset = (preset: string) => {
+    setDayPreset(preset);
     if (preset === "custom") {
       setIsCustomDays(true);
       setDays([]);
@@ -84,30 +62,25 @@ export default function SlotForm({ value, onChange, onsubmit }: Props) {
     setDays(dayPresets[preset] ?? []);
   };
 
-  const handleScheduleChange = (rows: SlotRow[]) => {
-    console.log("rows:",rows)
+  const handleScheduleChange = (rows: SlotCustomGroup[]) => {
     setScheduleRows(rows);
-
-    // ⭐ IMPORTANT: force custom mode when user edits table
     if (rows.length > 0 && timePreset !== "custom") {
       setTimePreset("custom");
     }
   };
 
   const handleSubmit = () => {
-    console.log("days:")
-
     const payload: SlotSettings = {
       ...value,
       days,
       timeType: timePreset,
       customSlots: timePreset === "custom" ? scheduleRows : [],
+      slotDuration: Number.isFinite(slotDuration) && slotDuration > 0 ? slotDuration : 15,
+      slotPrice: Number.isFinite(slotPrice) && slotPrice >= 0 ? slotPrice : 0,
     };
 
     onChange(payload);
-    onsubmit(false);
-
-    console.log("FINAL SLOT JSON:", payload);
+    onsubmit(false, payload);
   };
 
   return (
@@ -118,13 +91,13 @@ export default function SlotForm({ value, onChange, onsubmit }: Props) {
             Slot Allocation Form
           </Text>
 
-          {/* Days */}
           <Select
             placeholder="Choose preset"
+            value={dayPreset}
             onChange={handleDayPreset}
             options={[
               { label: "Whole week", value: "all" },
-              { label: "Working days (Mon–Fri)", value: "working" },
+              { label: "Working days (Mon-Fri)", value: "working" },
               { label: "Weekends only", value: "weekend" },
               { label: "Tue Wed Fri", value: "twf" },
               { label: "Custom", value: "custom" },
@@ -135,69 +108,57 @@ export default function SlotForm({ value, onChange, onsubmit }: Props) {
             <TokenAutoComplete
               options={dayOptions}
               value={days}
-              onChange={setDays}
+              onChange={(nextDays) => {
+                setDays(nextDays);
+                setDayPreset("custom");
+              }}
               placeholder="Search days..."
             />
           )}
 
-          {/* Time preset */}
           <Select
             placeholder="Select time range"
-            onChange={setTimePreset}
+            value={timePreset}
+            onChange={(next) => setTimePreset(next as SlotTimeType)}
             options={[
               { label: "24 hours", value: "24" },
-              { label: "Office (9–17)", value: "office" },
-              { label: "Morning (6–14)", value: "morning" },
-              { label: "Evening (14–22)", value: "evening" },
+              { label: "Office (9-17)", value: "office" },
+              { label: "Morning (6-14)", value: "morning" },
+              { label: "Evening (14-22)", value: "evening" },
               { label: "Custom", value: "custom" },
             ]}
           />
 
-          {/* ⭐ Custom table */}
           {timePreset === "custom" && (
             <div className="rounded-xl border p-4 bg-gray-50">
-              <ScheduleTable onChange={(rows: SlotRow[])=>handleScheduleChange(rows)} />
+              <ScheduleTable onChange={handleScheduleChange} allowedDays={days} />
             </div>
           )}
 
-          {/* Duration & Price */}
           <div className="grid grid-cols-2 gap-6 max-w-md">
             <div>
-              <Text className="text-sm font-medium mb-1">
-                Slot duration
-              </Text>
+              <Text className="text-sm font-medium mb-1">Slot duration</Text>
               <input
                 type="number"
-                value={value.slotDuration}
-                onChange={(e) =>
-                  onChange({
-                    ...value,
-                    slotDuration: Number(e.target.value),
-                  })
-                }
+                min={1}
+                value={slotDuration}
+                onChange={(e) => setSlotDuration(Number(e.target.value))}
                 className="w-full border rounded-md px-3 py-2"
               />
             </div>
 
             <div>
-              <Text className="text-sm font-medium mb-1">
-                Slot price
-              </Text>
+              <Text className="text-sm font-medium mb-1">Slot price</Text>
               <input
                 type="number"
-                value={value.slotPrice}
-                onChange={(e) =>
-                  onChange({
-                    ...value,
-                    slotPrice: Number(e.target.value),
-                  })
-                }
+                min={0}
+                value={slotPrice}
+                onChange={(e) => setSlotPrice(Number(e.target.value))}
                 className="w-full border rounded-md px-3 py-2"
               />
             </div>
           </div>
 
-          {/* Actions */}
           <div className="flex justify-end gap-3 pt-4">
             <button
               type="button"

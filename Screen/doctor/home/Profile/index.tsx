@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo } from "react";
 import { useDoctor } from "@/ContextApi/DoctorProfileContext";
 import DoctorHeader from "@/Components/DoctorHeader";
 import SlotForm, { SlotSettings } from "./SlotForm";
@@ -8,6 +8,7 @@ import DoctorHeaderForm from "./DoctorHeaderForm";
 import { Card } from "@/Components/ui/Card";
 import { VerticalContainer } from "@/Components/ui/Container";
 import Text from "@/Components/ui/Text";
+import type { PersistedSlotSettings } from "@/types/slotSettings";
 
 type DashboardDoctor = {
   id: string;
@@ -20,6 +21,7 @@ type DashboardDoctor = {
   tags: string[];
   availableToday: boolean;
   doctorEmail?: string;
+  slotSetting?: PersistedSlotSettings;
 };
 
 /* ---------------- LABEL MAPS ---------------- */
@@ -46,6 +48,25 @@ const timePresetLabel: Record<string, string> = {
 const ALL_DAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
 const WORKING_DAYS = ["mon", "tue", "wed", "thu", "fri"];
 const WEEKENDS = ["sat", "sun"];
+const dayTokenMap: Record<string, string> = {
+  mon: "mon",
+  monday: "mon",
+  tue: "tue",
+  tues: "tue",
+  tuesday: "tue",
+  wed: "wed",
+  wednesday: "wed",
+  thu: "thu",
+  thur: "thu",
+  thurs: "thu",
+  thursday: "thu",
+  fri: "fri",
+  friday: "fri",
+  sat: "sat",
+  saturday: "sat",
+  sun: "sun",
+  sunday: "sun",
+};
 
 function arraysEqual(a: string[], b: string[]) {
   if (a.length !== b.length) return false;
@@ -71,6 +92,31 @@ function normalizeRating(value: string) {
   return match?.[1] ?? "0";
 }
 
+function normalizeKey(value: string | undefined) {
+  return (value ?? "").trim().toLowerCase();
+}
+
+function normalizeSlotSetting(setting: SlotSettings): PersistedSlotSettings {
+  const normalizeDayToken = (token: string) => dayTokenMap[token.trim().toLowerCase()] ?? token.trim().toLowerCase();
+  const normalizeDayList = (tokens: string[]) =>
+    Array.from(new Set(tokens.map(normalizeDayToken).filter(Boolean)));
+
+  return {
+    days: Array.isArray(setting.days) ? normalizeDayList(setting.days) : [],
+    timeType: setting.timeType,
+    customSlots: Array.isArray(setting.customSlots)
+      ? setting.customSlots.map((group) => ({
+          ...group,
+          days: normalizeDayList(group.days ?? []),
+        }))
+      : [],
+    note: setting.note ?? "",
+    slotDuration: Number.isFinite(setting.slotDuration) && setting.slotDuration > 0 ? setting.slotDuration : 15,
+    slotPrice: Number.isFinite(setting.slotPrice) && setting.slotPrice >= 0 ? setting.slotPrice : 0,
+    updatedAt: new Date().toISOString(),
+  };
+}
+
 function syncDoctorDataToLocalStorage(doctor: {
   doctorName: string;
   doctorImage: string;
@@ -78,36 +124,50 @@ function syncDoctorDataToLocalStorage(doctor: {
   status: string;
   doctorEmail: string;
   stats: { label: string; value: string }[];
-}, tags: string[]) {
+}, tags?: string[], slotSetting?: SlotSettings) {
   if (typeof window === "undefined") return;
 
   const storageKey = "doctor_data";
   const raw = window.localStorage.getItem(storageKey);
-  const parsed = raw ? JSON.parse(raw) : [];
+  let parsed: unknown = [];
+
+  try {
+    parsed = raw ? JSON.parse(raw) : [];
+  } catch {
+    parsed = [];
+  }
+
   const doctorList: DashboardDoctor[] = Array.isArray(parsed) ? parsed : [];
-  const mail = doctor.doctorEmail.trim().toLowerCase();
+  const mail = normalizeKey(doctor.doctorEmail);
+  const profileKey = `${normalizeKey(doctor.doctorName)}::${normalizeKey(doctor.specialist)}`;
+
+  const existingIndex = doctorList.findIndex((item) => {
+    const itemEmail = normalizeKey(item.doctorEmail);
+    const itemProfileKey = `${normalizeKey(item.name)}::${normalizeKey(item.specialty)}`;
+    if (mail) {
+      return itemEmail === mail || itemProfileKey === profileKey;
+    }
+    return itemProfileKey === profileKey;
+  });
+
+  const existing = existingIndex >= 0 ? doctorList[existingIndex] : undefined;
 
   const nextDoctor: DashboardDoctor = {
-    id: `doc-${doctorList.length + 1}`,
+    id: existing?.id || `doc-${doctorList.length + 1}`,
     doctorImage: doctor.doctorImage,
     name: doctor.doctorName,
     specialty: doctor.specialist,
     experience: normalizeExperience(getStatValue(doctor.stats, "experience")),
     rating: normalizeRating(getStatValue(doctor.stats, "rating")),
-    description: `Specialist in ${doctor.specialist || "general care"}.`,
-    tags: tags.length ? tags : ["Online", "Top Rated"],
+    description: existing?.description || `Specialist in ${doctor.specialist || "general care"}.`,
+    tags: tags && tags.length ? tags : existing?.tags || ["Online", "Top Rated"],
     availableToday: doctor.status.toLowerCase().includes("online") || doctor.status.toLowerCase().includes("available"),
-    doctorEmail: mail,
+    doctorEmail: mail || existing?.doctorEmail,
+    slotSetting: slotSetting ? normalizeSlotSetting(slotSetting) : existing?.slotSetting,
   };
 
-  const existingIndex = doctorList.findIndex((item) => (item.doctorEmail ?? "").trim().toLowerCase() === mail);
-
   if (existingIndex >= 0) {
-    doctorList[existingIndex] = {
-      ...doctorList[existingIndex],
-      ...nextDoctor,
-      id: doctorList[existingIndex].id || nextDoctor.id,
-    };
+    doctorList[existingIndex] = { ...doctorList[existingIndex], ...nextDoctor };
   } else {
     doctorList.push(nextDoctor);
   }
@@ -173,10 +233,6 @@ export default function DoctorProfile() {
     return timePresetLabel[slotSetting.timeType] ?? "Not set";
   }, [slotSetting]);
 
-  useEffect(() => {
-    console.log("last data:", slotSetting);
-  }, [slotSetting]);
-
   return (
     <div className="bg-gray-100 min-h-screen w-full">
       {/* Header */}
@@ -219,7 +275,24 @@ export default function DoctorProfile() {
           <SlotForm
             value={slotSetting}
             onChange={setSlotSetting}
-            onsubmit={() => setEditSlot(false)}
+            onsubmit={(open, payload) => {
+              setEditSlot(open);
+              if (!payload) return;
+
+              setSlotSetting(payload);
+              syncDoctorDataToLocalStorage(
+                {
+                  doctorName: doctor.doctorName,
+                  doctorImage: doctor.doctorImage,
+                  specialist: doctor.specialist,
+                  status: doctor.status,
+                  doctorEmail: doctor.doctorEmail,
+                  stats: doctor.stats,
+                },
+                undefined,
+                payload
+              );
+            }}
           />
         ) : (
           <Card>
@@ -228,8 +301,6 @@ export default function DoctorProfile() {
                 <Text as="h2" className="text-xl font-semibold">
                   Slot Summary
                 </Text>
-
-                {/* ---------------- DAYS ---------------- */}
                 <div>
                   <Text className="text-sm text-gray-500 mb-2">
                     Days

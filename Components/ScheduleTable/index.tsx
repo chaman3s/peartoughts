@@ -27,26 +27,28 @@ const dayOptions: Option[] = [
   { value: "sun", label: "Sunday" },
 ];
 type ScheduleTableProps={
-    id: number;
-  days: string[];
-  slots: TimeSlot[];
-  onChange:(rows:Row[])=>void
+  onChange: (rows: Row[]) => void;
+  allowedDays?: string[];
+};
 
-}
-
-export default function ScheduleTable({onChange}:ScheduleTableProps) {
+export default function ScheduleTable({ onChange, allowedDays }: ScheduleTableProps) {
+  const allowedDaySet = new Set((allowedDays ?? []).map((day) => day.trim().toLowerCase()));
+  const tableDayOptions =
+    allowedDaySet.size > 0
+      ? dayOptions.filter((option) => allowedDaySet.has(option.value))
+      : dayOptions;
    
   const [rows, setRows] = useState<Row[]>([
     {
       id: 1,
       days: [],
-      slots: [{ id: Date.now(), startTime: "", endTime: "" }],
+      slots: [{ id: 1, startTime: "", endTime: "" }],
     },
 
   ]);
    useEffect(()=>{
         onChange(rows)
-    },[rows])
+    },[rows,onChange])
 
   // update days
   const updateRowDays = (rowId: number, days: string[]) => {
@@ -149,7 +151,7 @@ export default function ScheduleTable({onChange}:ScheduleTableProps) {
                 {/* DAYS */}
                 <td className="px-4 py-2 min-w-[240px]">
                   <TokenAutoComplete
-                    options={dayOptions}
+                    options={tableDayOptions}
                     value={row.days}
                     onChange={(val) => updateRowDays(row.id, val)}
                     placeholder="Select days..."
