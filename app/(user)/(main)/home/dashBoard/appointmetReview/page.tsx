@@ -1,4 +1,4 @@
-import AppointmentStatus from "@/Screen/main/AppointmentReview"
+import AppointmentStatus from "@/Screen/user/main/AppointmentReview"
 import { Suspense } from "react"
 export default function AppointmentStatusPage(){
     return(

@@ -1,4 +1,4 @@
-import AddPatientDetailScreen from "@/Screen/main/AddpatientDetailScreen";
+import AddPatientDetailScreen from "@/Screen/user/main/AddpatientDetailScreen";
 
 export default function AddPatientDetailPage() {
   return <AddPatientDetailScreen />;
