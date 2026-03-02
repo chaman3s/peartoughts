@@ -151,8 +151,8 @@ export default function DoctorHeaderForm({ value, onSave, onCancel }: Props) {
 
     const parsedTags = form.tags
       .split(",")
-      .map((tag) => tag.trim())
-      .filter(Boolean);
+      .map((tag: string) => tag.trim())
+      .filter((tag: string) => Boolean(tag));
 
     onSave({
       status: form.status.trim(),
