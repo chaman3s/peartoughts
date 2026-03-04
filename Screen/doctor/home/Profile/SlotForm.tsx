@@ -4,7 +4,7 @@ import Text from "@/Components/ui/Text";
 import { Card } from "@/Components/ui/Card";
 import { VerticalContainer } from "@/Components/ui/Container";
 import Select from "@/Components/ui/Select";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import TokenAutoComplete from "@/Components/ui/Select/TokenAutoComplete";
 import ScheduleTable from "@/Components/ScheduleTable";
 import type { PersistedSlotSettings, SlotCustomGroup, SlotTimeType } from "@/types/slotSettings";
@@ -25,6 +25,16 @@ const dayOptions = [
   { value: "fri", label: "Friday" },
   { value: "sat", label: "Saturday" },
   { value: "sun", label: "Sunday" },
+];
+
+const weekView = [
+  { value: "mon", shortLabel: "Mon" },
+  { value: "tue", shortLabel: "Tue" },
+  { value: "wed", shortLabel: "Wed" },
+  { value: "thu", shortLabel: "Thu" },
+  { value: "fri", shortLabel: "Fri" },
+  { value: "sat", shortLabel: "Sat" },
+  { value: "sun", shortLabel: "Sun" },
 ];
 
 const dayPresets: Record<string, string[]> = {
@@ -49,6 +59,7 @@ export default function SlotForm({ value, onChange, onsubmit }: Props) {
   const [scheduleRows, setScheduleRows] = useState<SlotCustomGroup[]>(value.customSlots);
   const [slotDuration, setSlotDuration] = useState<number>(value.slotDuration);
   const [slotPrice, setSlotPrice] = useState<number>(value.slotPrice);
+  const selectedDaysCount = useMemo(() => days.length, [days]);
 
   const handleDayPreset = (preset: string) => {
     setDayPreset(preset);
@@ -69,6 +80,16 @@ export default function SlotForm({ value, onChange, onsubmit }: Props) {
     }
   };
 
+  const toggleDay = (day: string) => {
+    setIsCustomDays(true);
+    setDayPreset("custom");
+    setDays((prev) =>
+      prev.includes(day)
+        ? prev.filter((item) => item !== day)
+        : [...prev, day]
+    );
+  };
+
   const handleSubmit = () => {
     const payload: SlotSettings = {
       ...value,
@@ -86,84 +107,182 @@ export default function SlotForm({ value, onChange, onsubmit }: Props) {
   return (
     <Card>
       <VerticalContainer>
-        <div className="p-8 space-y-6">
-          <Text as="h1" className="text-2xl font-semibold">
-            Slot Allocation Form
-          </Text>
+        <div className="space-y-6 p-5 md:p-8">
+          <div className="space-y-1">
+            <Text as="h1" className="text-2xl font-semibold text-slate-900">
+              Slot Allocation
+            </Text>
+            <Text className="text-sm text-slate-500">
+              Configure available days, timing, and fees in one place.
+            </Text>
+          </div>
 
-          <Select
-            placeholder="Choose preset"
-            value={dayPreset}
-            onChange={handleDayPreset}
-            options={[
-              { label: "Whole week", value: "all" },
-              { label: "Working days (Mon-Fri)", value: "working" },
-              { label: "Weekends only", value: "weekend" },
-              { label: "Tue Wed Fri", value: "twf" },
-              { label: "Custom", value: "custom" },
-            ]}
-          />
+          <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4 md:p-5">
+            <div className="mb-4 flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() => handleDayPreset("all")}
+                className={`rounded-full px-3 py-1.5 text-xs font-semibold ${
+                  dayPreset === "all"
+                    ? "bg-cyan-600 text-white"
+                    : "bg-white text-slate-600"
+                }`}
+              >
+                Whole week
+              </button>
+              <button
+                type="button"
+                onClick={() => handleDayPreset("working")}
+                className={`rounded-full px-3 py-1.5 text-xs font-semibold ${
+                  dayPreset === "working"
+                    ? "bg-cyan-600 text-white"
+                    : "bg-white text-slate-600"
+                }`}
+              >
+                Mon-Fri
+              </button>
+              <button
+                type="button"
+                onClick={() => handleDayPreset("weekend")}
+                className={`rounded-full px-3 py-1.5 text-xs font-semibold ${
+                  dayPreset === "weekend"
+                    ? "bg-cyan-600 text-white"
+                    : "bg-white text-slate-600"
+                }`}
+              >
+                Weekend
+              </button>
+              <button
+                type="button"
+                onClick={() => handleDayPreset("custom")}
+                className={`rounded-full px-3 py-1.5 text-xs font-semibold ${
+                  dayPreset === "custom"
+                    ? "bg-cyan-600 text-white"
+                    : "bg-white text-slate-600"
+                }`}
+              >
+                Custom
+              </button>
+            </div>
 
-          {isCustomDays && (
-            <TokenAutoComplete
-              options={dayOptions}
-              value={days}
-              onChange={(nextDays) => {
-                setDays(nextDays);
-                setDayPreset("custom");
-              }}
-              placeholder="Search days..."
+            <Text className="mb-3 text-sm font-medium text-slate-700">
+              Calendar view (select available days)
+            </Text>
+            <div className="grid grid-cols-7 gap-2">
+              {weekView.map((day) => {
+                const active = days.includes(day.value);
+                return (
+                  <button
+                    key={day.value}
+                    type="button"
+                    onClick={() => toggleDay(day.value)}
+                    className={`rounded-xl border px-2 py-3 text-center text-sm font-semibold transition ${
+                      active
+                        ? "border-cyan-600 bg-cyan-600 text-white"
+                        : "border-slate-300 bg-white text-slate-600 hover:border-slate-400"
+                    }`}
+                  >
+                    {day.shortLabel}
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-slate-500">
+              <span>{selectedDaysCount} day(s) selected</span>
+              <button
+                type="button"
+                onClick={() => handleDayPreset("all")}
+                className="font-semibold text-cyan-700 hover:text-cyan-800"
+              >
+                Select all
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsCustomDays(true);
+                  setDayPreset("custom");
+                  setDays([]);
+                }}
+                className="font-semibold text-rose-600 hover:text-rose-700"
+              >
+                Clear
+              </button>
+            </div>
+
+            {isCustomDays && (
+              <div className="mt-4">
+                <TokenAutoComplete
+                  options={dayOptions}
+                  value={days}
+                  onChange={(nextDays) => {
+                    setDays(nextDays);
+                    setDayPreset("custom");
+                  }}
+                  placeholder="Search days..."
+                />
+              </div>
+            )}
+          </div>
+
+          <div className="rounded-2xl border border-slate-200 p-4 md:p-5">
+            <Text className="mb-3 text-sm font-medium text-slate-700">
+              Time configuration
+            </Text>
+            <Select
+              placeholder="Select time range"
+              value={timePreset}
+              onChange={(next) => setTimePreset(next as SlotTimeType)}
+              options={[
+                { label: "24 hours", value: "24" },
+                { label: "Office (9-17)", value: "office" },
+                { label: "Morning (6-14)", value: "morning" },
+                { label: "Evening (14-22)", value: "evening" },
+                { label: "Custom", value: "custom" },
+              ]}
             />
-          )}
 
-          <Select
-            placeholder="Select time range"
-            value={timePreset}
-            onChange={(next) => setTimePreset(next as SlotTimeType)}
-            options={[
-              { label: "24 hours", value: "24" },
-              { label: "Office (9-17)", value: "office" },
-              { label: "Morning (6-14)", value: "morning" },
-              { label: "Evening (14-22)", value: "evening" },
-              { label: "Custom", value: "custom" },
-            ]}
-          />
+            {timePreset === "custom" && (
+              <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4">
+                <ScheduleTable onChange={handleScheduleChange} allowedDays={days} />
+              </div>
+            )}
+          </div>
 
-          {timePreset === "custom" && (
-            <div className="rounded-xl border p-4 bg-gray-50">
-              <ScheduleTable onChange={handleScheduleChange} allowedDays={days} />
-            </div>
-          )}
+          <div className="rounded-2xl border border-slate-200 p-4 md:p-5">
+            <Text className="mb-3 text-sm font-medium text-slate-700">
+              Slot details
+            </Text>
+            <div className="grid max-w-md grid-cols-2 gap-4">
+              <div>
+                <Text className="mb-1 text-sm font-medium text-slate-600">Slot duration (min)</Text>
+                <input
+                  type="number"
+                  min={1}
+                  value={slotDuration}
+                  onChange={(e) => setSlotDuration(Number(e.target.value))}
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2 outline-none focus:border-cyan-500"
+                />
+              </div>
 
-          <div className="grid grid-cols-2 gap-6 max-w-md">
-            <div>
-              <Text className="text-sm font-medium mb-1">Slot duration</Text>
-              <input
-                type="number"
-                min={1}
-                value={slotDuration}
-                onChange={(e) => setSlotDuration(Number(e.target.value))}
-                className="w-full border rounded-md px-3 py-2"
-              />
-            </div>
-
-            <div>
-              <Text className="text-sm font-medium mb-1">Slot price</Text>
-              <input
-                type="number"
-                min={0}
-                value={slotPrice}
-                onChange={(e) => setSlotPrice(Number(e.target.value))}
-                className="w-full border rounded-md px-3 py-2"
-              />
+              <div>
+                <Text className="mb-1 text-sm font-medium text-slate-600">Slot price</Text>
+                <input
+                  type="number"
+                  min={0}
+                  value={slotPrice}
+                  onChange={(e) => setSlotPrice(Number(e.target.value))}
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2 outline-none focus:border-cyan-500"
+                />
+              </div>
             </div>
           </div>
 
-          <div className="flex justify-end gap-3 pt-4">
+          <div className="flex flex-wrap justify-end gap-3 pt-1">
             <button
               type="button"
               onClick={() => onsubmit(false)}
-              className="px-4 py-2 border rounded-md"
+              className="rounded-lg border border-slate-300 px-4 py-2 text-slate-700 hover:bg-slate-50"
             >
               Cancel
             </button>
@@ -171,7 +290,7 @@ export default function SlotForm({ value, onChange, onsubmit }: Props) {
             <button
               type="button"
               onClick={handleSubmit}
-              className="px-5 py-2 bg-black text-white rounded-md"
+              className="rounded-lg bg-cyan-600 px-5 py-2 font-semibold text-white hover:bg-cyan-700"
             >
               Save Slots
             </button>

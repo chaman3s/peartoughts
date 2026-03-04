@@ -9,6 +9,7 @@ import { Card } from "@/Components/ui/Card";
 import { VerticalContainer } from "@/Components/ui/Container";
 import Text from "@/Components/ui/Text";
 import type { PersistedSlotSettings } from "@/types/slotSettings";
+import { CalendarDays, Clock3, IndianRupee, Stethoscope } from "lucide-react";
 
 type DashboardDoctor = {
   id: string;
@@ -38,9 +39,9 @@ const dayLabelMap: Record<string, string> = {
 
 const timePresetLabel: Record<string, string> = {
   "24": "24 Hours",
-  office: "Office (9–17)",
-  morning: "Morning (6–14)",
-  evening: "Evening (14–22)",
+  office: "Office (09:00-17:00)",
+  morning: "Morning (06:00-14:00)",
+  evening: "Evening (14:00-22:00)",
 };
 
 /* ---------------- HELPERS ---------------- */
@@ -189,13 +190,13 @@ function getCustomTimeLabel(settings: SlotSettings) {
   if (!allSlots.length) return "Not set";
 
   if (allSlots.length === 1) {
-    return `${allSlots[0].start} – ${allSlots[0].end}`;
+    return `${allSlots[0].start} - ${allSlots[0].end}`;
   }
 
   const startTimes = allSlots.map((s) => s.start).sort();
   const endTimes = allSlots.map((s) => s.end).sort();
 
-  return `${startTimes[0]} – ${endTimes[endTimes.length - 1]}`;
+  return `${startTimes[0]} - ${endTimes[endTimes.length - 1]}`;
 }
 
 /* ---------------- COMPONENT ---------------- */
@@ -232,6 +233,11 @@ export default function DoctorProfile() {
     }
     return timePresetLabel[slotSetting.timeType] ?? "Not set";
   }, [slotSetting]);
+
+  const customRangeCount = useMemo(() => {
+    if (slotSetting.timeType !== "custom") return 0;
+    return slotSetting.customSlots.reduce((count, group) => count + group.slots.length, 0);
+  }, [slotSetting.customSlots, slotSetting.timeType]);
 
   return (
     <div className="bg-gray-100 min-h-screen w-full">
@@ -297,29 +303,72 @@ export default function DoctorProfile() {
         ) : (
           <Card>
             <VerticalContainer>
-              <div className="p-6 space-y-6">
-                <Text as="h2" className="text-xl font-semibold">
-                  Slot Summary
-                </Text>
-                <div>
-                  <Text className="text-sm text-gray-500 mb-2">
+              <div className="space-y-6 p-4 sm:p-6">
+                <div className="rounded-2xl border border-blue-100 bg-gradient-to-r from-blue-600 via-indigo-600 to-cyan-600 p-5 text-white">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <Text as="h2" className="text-xl font-semibold text-white">
+                        Slot Summary
+                      </Text>
+                      <Text className="mt-1 text-sm text-blue-50">
+                        Easy view of your selected days, time ranges and consultation fee.
+                      </Text>
+                    </div>
+                    <div className="rounded-full bg-white/20 px-3 py-1 text-xs font-medium backdrop-blur">
+                      {slotSetting.timeType === "custom" ? `${customRangeCount} custom ranges` : timeSummaryLabel}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                    <div className="mb-2 flex items-center gap-2 text-slate-500">
+                      <CalendarDays className="h-4 w-4" />
+                      <Text className="text-xs font-medium uppercase tracking-wide">Selected Days</Text>
+                    </div>
+                    <Text className="text-lg font-semibold text-slate-900">
+                      {slotSetting.days?.length || 0}
+                    </Text>
+                  </div>
+
+                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                    <div className="mb-2 flex items-center gap-2 text-slate-500">
+                      <Clock3 className="h-4 w-4" />
+                      <Text className="text-xs font-medium uppercase tracking-wide">Slot Duration</Text>
+                    </div>
+                    <Text className="text-lg font-semibold text-slate-900">
+                      {slotSetting.slotDuration} min
+                    </Text>
+                  </div>
+
+                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                    <div className="mb-2 flex items-center gap-2 text-slate-500">
+                      <IndianRupee className="h-4 w-4" />
+                      <Text className="text-xs font-medium uppercase tracking-wide">Consultation Fee</Text>
+                    </div>
+                    <Text className="text-lg font-semibold text-slate-900">
+                      {slotSetting.slotPrice}
+                    </Text>
+                  </div>
+                </div>
+
+                <div className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
+                  <Text className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-500">
                     Days
                   </Text>
 
                   {!slotSetting.days?.length ? (
-                    <span className="text-gray-400 text-sm">
-                      Not set
-                    </span>
+                    <Text className="text-sm text-slate-400">No days selected yet</Text>
                   ) : daySummaryLabel ? (
-                    <Text className="font-medium">
+                    <div className="inline-flex rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-sm font-medium text-emerald-700">
                       {daySummaryLabel}
-                    </Text>
+                    </div>
                   ) : (
                     <div className="flex flex-wrap gap-2">
                       {slotSetting.days.map((d) => (
                         <span
                           key={d}
-                          className="px-3 py-1 rounded-full bg-gray-100 text-sm"
+                          className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-sm font-medium text-slate-700"
                         >
                           {dayLabelMap[d] ?? d}
                         </span>
@@ -328,49 +377,67 @@ export default function DoctorProfile() {
                   )}
                 </div>
 
-                {/* ---------------- TIME RANGE ---------------- */}
-                <div>
-                  <Text className="text-sm text-gray-500 mb-2">
-                    Time Range
+                <div className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
+                  <Text className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-500">
+                    Time Ranges
                   </Text>
 
                   {slotSetting.timeType !== "custom" ? (
-                    <Text className="font-medium">
+                    <div className="inline-flex rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-medium text-blue-700">
                       {timeSummaryLabel}
-                    </Text>
+                    </div>
                   ) : slotSetting.customSlots.length === 0 ? (
-                    <Text className="text-gray-400 text-sm">
-                      Not set
-                    </Text>
+                    <Text className="text-sm text-slate-400">No custom time ranges added</Text>
                   ) : (
                     <div className="space-y-3">
-                      {slotSetting.customSlots.map((group) => (
+                      <Text className="text-xs text-slate-500">
+                        Each card below shows days and the slot ranges that apply to those days.
+                      </Text>
+
+                      {slotSetting.customSlots.map((group, groupIndex) => (
                         <div
                           key={group.id}
-                          className="p-3 rounded-lg bg-gray-50 border"
+                          className="rounded-xl border border-slate-200 bg-slate-50 p-3 sm:p-4"
                         >
-                          {/* group days */}
-                          <div className="flex flex-wrap gap-2 mb-2">
-                            {group.days.map((d) => (
-                              <span
-                                key={d}
-                                className="px-2 py-0.5 text-xs rounded-full bg-white border"
-                              >
-                                {dayLabelMap[d] ?? d}
-                              </span>
-                            ))}
+                          <div className="mb-3 flex items-center justify-between gap-2">
+                            <Text className="text-sm font-semibold text-slate-800">
+                              Schedule Group {groupIndex + 1}
+                            </Text>
+                            <Text className="text-xs text-slate-500">
+                              {group.days.length} day{group.days.length === 1 ? "" : "s"} • {group.slots.length} slot{group.slots.length === 1 ? "" : "s"}
+                            </Text>
                           </div>
 
-                          {/* group slots */}
-                          <div className="flex flex-wrap gap-2">
-                            {group.slots.map((s, i) => (
-                              <span
-                                key={i}
-                                className="px-3 py-1 rounded-md bg-gray-200 text-sm"
-                              >
-                                {s.startTime} – {s.endTime}
-                              </span>
-                            ))}
+                          <div className="space-y-2">
+                            <Text className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                              Applies To Days
+                            </Text>
+                            <div className="flex flex-wrap gap-2">
+                              {group.days.map((d) => (
+                                <span
+                                  key={d}
+                                  className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-600"
+                                >
+                                  {dayLabelMap[d] ?? d}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+
+                          <div className="mt-3 space-y-2">
+                            <Text className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                              Available Slots Timing Range for a day
+                            </Text>
+                            <div className="flex flex-wrap gap-2">
+                              {group.slots.map((s, i) => (
+                                <span
+                                  key={i}
+                                  className="inline-flex items-center rounded-md bg-blue-100 px-3 py-1 text-sm font-medium text-blue-800"
+                                >
+                                  {s.startTime} - {s.endTime}
+                                </span>
+                              ))}
+                            </div>
                           </div>
                         </div>
                       ))}
@@ -378,33 +445,18 @@ export default function DoctorProfile() {
                   )}
                 </div>
 
-                {/* ---------------- DURATION + PRICE ---------------- */}
-                <div className="grid grid-cols-2 gap-6 max-w-md">
-                  <div>
-                    <Text className="text-sm text-gray-500 mb-1">
-                      Slot Duration
-                    </Text>
-                    <Text className="font-medium">
-                      {slotSetting.slotDuration} minutes
-                    </Text>
+                <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3">
+                  <div className="flex items-center gap-2 text-slate-600">
+                    <Stethoscope className="h-4 w-4" />
+                    <Text className="text-sm">Patients will see these slots on booking screen.</Text>
                   </div>
-
-                  <div>
-                    <Text className="text-sm text-gray-500 mb-1">
-                      Slot Price
-                    </Text>
-                    <Text className="font-medium">
-                      ₹{slotSetting.slotPrice}
-                    </Text>
-                  </div>
+                  <button
+                    onClick={() => setEditSlot(true)}
+                    className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700"
+                  >
+                    Edit Slots
+                  </button>
                 </div>
-
-                <button
-                  onClick={() => setEditSlot(true)}
-                  className="px-4 py-2 border rounded-md w-fit hover:bg-gray-50"
-                >
-                  Edit Slots
-                </button>
               </div>
             </VerticalContainer>
           </Card>
@@ -413,3 +465,6 @@ export default function DoctorProfile() {
     </div>
   );
 }
+
+
+

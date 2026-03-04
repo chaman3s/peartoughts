@@ -31,6 +31,7 @@ export default function NavBar() {
   const pathname = usePathname();
   const isDoctorRoute = pathname?.startsWith("/doctor");
   const profileHref = isDoctorRoute ? "/doctor/home/profile" : "/home/Profile";
+  const prescriptionHref = "/home/prescription";
   const loginHref = isDoctorRoute ? "/doctor/login" : "/login";
   const isLoggedIn = useSyncExternalStore(
     (onStoreChange) => {
@@ -256,6 +257,15 @@ export default function NavBar() {
                 >
                   View Profile
                 </Link>
+                {!isDoctorRoute && (
+                  <Link
+                    href={prescriptionHref}
+                    onClick={() => setIsProfileMenuOpen(false)}
+                    className="block px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100"
+                  >
+                    Prescription
+                  </Link>
+                )}
                 <button
                   type="button"
                   onClick={() => {
