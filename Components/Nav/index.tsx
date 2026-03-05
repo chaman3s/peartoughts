@@ -9,6 +9,7 @@ import Link from "next/link";
 import Button from "../ui/Button";
 import { isMockAuthenticated, logoutMockApi } from "@/services/mockAuthApi";
 import { usePathname, useRouter } from "next/navigation";
+import { useDoctorOptional } from "@/ContextApi/DoctorProfileContext";
 
 type DoctorCard = {
   id: string;
@@ -21,6 +22,42 @@ type DoctorCard = {
   availableToday: boolean;
 };
 
+function subscribeAuthChanges(onStoreChange: () => void) {
+  if (typeof window === "undefined") return () => undefined;
+
+  const handler = () => onStoreChange();
+  window.addEventListener("storage", handler);
+  window.addEventListener("mock-auth-changed", handler as EventListener);
+
+  return () => {
+    window.removeEventListener("storage", handler);
+    window.removeEventListener("mock-auth-changed", handler as EventListener);
+  };
+}
+
+function getUserProfileInitialSnapshot() {
+  if (typeof window === "undefined") return "U";
+
+  try {
+    const sessionRaw = window.localStorage.getItem("mock_auth_session");
+    const usersRaw = window.localStorage.getItem("mock_auth_users");
+    if (!sessionRaw || !usersRaw) return "U";
+
+    const session = JSON.parse(sessionRaw) as { userId?: string | null };
+    const users = JSON.parse(usersRaw) as Array<{ id?: string; fullname?: string; email?: string }>;
+    if (!session?.userId || !Array.isArray(users)) return "U";
+
+    const matchedUser = users.find((item) => item?.id === session.userId);
+    const fullName = typeof matchedUser?.fullname === "string" ? matchedUser.fullname.trim() : "";
+    const email = typeof matchedUser?.email === "string" ? matchedUser.email.trim() : "";
+    const source = fullName || email;
+    const firstChar = source.charAt(0).toUpperCase();
+    return firstChar || "U";
+  } catch {
+    return "U";
+  }
+}
+
 export default function NavBar() {
   const [searchQuery, setSearchQuery] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -30,25 +67,70 @@ export default function NavBar() {
   const router = useRouter();
   const pathname = usePathname();
   const isDoctorRoute = pathname?.startsWith("/doctor");
+  const doctorContext = useDoctorOptional();
   const profileHref = isDoctorRoute ? "/doctor/home/profile" : "/home/Profile";
   const prescriptionHref = "/home/prescription";
   const loginHref = isDoctorRoute ? "/doctor/login" : "/login";
   const isLoggedIn = useSyncExternalStore(
-    (onStoreChange) => {
-      if (typeof window === "undefined") return () => undefined;
-
-      const handler = () => onStoreChange();
-      window.addEventListener("storage", handler);
-      window.addEventListener("mock-auth-changed", handler as EventListener);
-
-      return () => {
-        window.removeEventListener("storage", handler);
-        window.removeEventListener("mock-auth-changed", handler as EventListener);
-      };
-    },
+    subscribeAuthChanges,
     () => isMockAuthenticated(),
     () => false
   );
+  const userProfileInitial = useSyncExternalStore(
+    subscribeAuthChanges,
+    getUserProfileInitialSnapshot,
+    () => "U"
+  );
+  const isDoctorAvailable = (() => {
+    if (!doctorContext?.doctor) return false;
+    const status = doctorContext.doctor.status.trim().toLowerCase();
+    return status.includes("online") || status.includes("available");
+  })();
+
+  const syncDoctorAvailabilityInStorage = (nextStatus: string) => {
+    if (typeof window === "undefined" || !doctorContext?.doctor) return;
+
+    const normalize = (value: string | undefined) => (value ?? "").trim().toLowerCase();
+    const storageKey = "doctor_data";
+    const raw = window.localStorage.getItem(storageKey);
+    if (!raw) return;
+
+    try {
+      const parsed = JSON.parse(raw);
+      if (!Array.isArray(parsed)) return;
+
+      const doctorName = normalize(doctorContext.doctor.doctorName);
+      const specialist = normalize(doctorContext.doctor.specialist);
+      const email = normalize(doctorContext.doctor.doctorEmail);
+      const nextAvailableToday = nextStatus.toLowerCase().includes("online") || nextStatus.toLowerCase().includes("available");
+
+      const updated = parsed.map((item) => {
+        const itemName = normalize(item?.name);
+        const itemSpecialty = normalize(item?.specialty);
+        const itemEmail = normalize(item?.doctorEmail);
+        const matchesByEmail = email && itemEmail === email;
+        const matchesByProfile = itemName === doctorName && itemSpecialty === specialist;
+
+        if (!matchesByEmail && !matchesByProfile) return item;
+
+        return {
+          ...item,
+          availableToday: nextAvailableToday,
+        };
+      });
+
+      window.localStorage.setItem(storageKey, JSON.stringify(updated));
+    } catch {
+      return;
+    }
+  };
+
+  const handleDoctorStatusToggle = () => {
+    if (!doctorContext) return;
+    const nextStatus = isDoctorAvailable ? "not available" : "available";
+    doctorContext.updateDoctor({ status: nextStatus });
+    syncDoctorAvailabilityInStorage(nextStatus);
+  };
 
   const doctors = useMemo<DoctorCard[]>(() => [
     {
@@ -180,7 +262,7 @@ export default function NavBar() {
         </div>
 
         {/* Search Section */}
-        {isLoggedIn && (
+        {isLoggedIn && !isDoctorRoute && (
           <div className="hidden flex-1 items-center justify-center md:flex">
             <div className="relative w-full max-w-2xl">
               <SearchBar
@@ -235,7 +317,31 @@ export default function NavBar() {
         )}
 
         {/* Avatar */}
-        {isLoggedIn ? (
+        {isLoggedIn && isDoctorRoute ? (
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleDoctorStatusToggle}
+              className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
+                isDoctorAvailable
+                  ? "border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+                  : "border border-slate-300 bg-slate-100 text-slate-700 hover:bg-slate-200"
+              }`}
+            >
+              {isDoctorAvailable ? "Available" : "Not Available"}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                logoutMockApi();
+                router.push(loginHref);
+              }}
+              className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-1.5 text-sm font-semibold text-rose-700 hover:bg-rose-100"
+            >
+              Logout
+            </button>
+          </div>
+        ) : isLoggedIn ? (
           <div ref={profileMenuRef} className="relative">
             <button
               type="button"
@@ -245,7 +351,7 @@ export default function NavBar() {
               aria-expanded={isProfileMenuOpen}
               aria-label="Profile menu"
             >
-              A
+              {userProfileInitial}
             </button>
 
             {isProfileMenuOpen && (

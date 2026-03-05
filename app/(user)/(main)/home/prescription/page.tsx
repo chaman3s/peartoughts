@@ -1,7 +1,7 @@
 "use client";
 
 import { CalendarDays, FileText, Pill } from "lucide-react";
-import { useCallback, useMemo, useSyncExternalStore } from "react";
+import { useCallback, useMemo, useState, useSyncExternalStore } from "react";
 import Image from "next/image";
 import { useDoctor } from "@/ContextApi/doctorContext";
 
@@ -233,6 +233,7 @@ function escapeHtml(value: string) {
 
 export default function PrescriptionPage() {
   const { doctor } = useDoctor();
+  const [downloadError, setDownloadError] = useState("");
   const snapshot = useSyncExternalStore(subscribeStorage, getStorageSnapshot, getServerSnapshot);
   const currentUserEmail = useSyncExternalStore(
     subscribeStorage,
@@ -282,9 +283,11 @@ export default function PrescriptionPage() {
 
   const handleDownloadPrescription = useCallback(() => {
     if (!latestPrescription || typeof window === "undefined") return;
-
-    const printWindow = window.open("", "_blank", "noopener,noreferrer,width=900,height=1000");
-    if (!printWindow) return;
+    setDownloadError("");
+    if (!prescriptionDoctor?.doctorSignature || !prescriptionDoctor?.doctorStamp) {
+      window.alert("You need to add first signature and stamp.");
+      return;
+    }
 
     const signatureHtml = prescriptionDoctor?.doctorSignature
       ? `<div class="auth-card"><p class="auth-title">Doctor Signature</p><img src="${escapeHtml(prescriptionDoctor.doctorSignature)}" alt="Doctor signature" /></div>`
@@ -368,6 +371,43 @@ export default function PrescriptionPage() {
       </html>
     `;
 
+    const frame = window.document.createElement("iframe");
+    frame.style.position = "fixed";
+    frame.style.right = "0";
+    frame.style.bottom = "0";
+    frame.style.width = "0";
+    frame.style.height = "0";
+    frame.style.border = "0";
+    frame.setAttribute("aria-hidden", "true");
+    window.document.body.appendChild(frame);
+
+    const frameDoc = frame.contentDocument;
+    const frameWindow = frame.contentWindow;
+    if (frameDoc && frameWindow) {
+      frameDoc.open();
+      frameDoc.write(html);
+      frameDoc.close();
+      window.setTimeout(() => {
+        frameWindow.focus();
+        frameWindow.print();
+        window.setTimeout(() => {
+          if (frame.parentNode) {
+            frame.parentNode.removeChild(frame);
+          }
+        }, 1200);
+      }, 300);
+      return;
+    }
+
+    if (frame.parentNode) {
+      frame.parentNode.removeChild(frame);
+    }
+
+    const printWindow = window.open("", "_blank", "noopener,noreferrer,width=900,height=1000");
+    if (!printWindow) {
+      setDownloadError("Popup blocked. Please allow popups, then try again.");
+      return;
+    }
     printWindow.document.open();
     printWindow.document.write(html);
     printWindow.document.close();
@@ -395,13 +435,18 @@ export default function PrescriptionPage() {
             </div>
           ) : null}
           {latestPrescription ? (
-            <button
-              type="button"
-              onClick={handleDownloadPrescription}
-              className="self-start rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700"
-            >
-              Download Prescription PDF
-            </button>
+            <div className="self-start">
+              <button
+                type="button"
+                onClick={handleDownloadPrescription}
+                className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700"
+              >
+                Download Prescription PDF
+              </button>
+              {downloadError ? (
+                <p className="mt-1 text-xs font-medium text-rose-600">{downloadError}</p>
+              ) : null}
+            </div>
           ) : null}
         </header>
 

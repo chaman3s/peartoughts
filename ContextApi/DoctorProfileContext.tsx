@@ -96,3 +96,7 @@ export function useDoctor() {
 
   return context;
 }
+
+export function useDoctorOptional() {
+  return useContext(DoctorProfileContext);
+}
