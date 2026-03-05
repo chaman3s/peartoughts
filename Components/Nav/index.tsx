@@ -22,6 +22,13 @@ type DoctorCard = {
   availableToday: boolean;
 };
 
+function isDoctorAvailableStatus(status: string | undefined) {
+  const normalized = (status ?? "").trim().toLowerCase();
+  if (!normalized) return false;
+  if (normalized === "not available") return false;
+  return normalized === "available" || normalized === "avaalble" || normalized === "online";
+}
+
 function subscribeAuthChanges(onStoreChange: () => void) {
   if (typeof window === "undefined") return () => undefined;
 
@@ -83,8 +90,7 @@ export default function NavBar() {
   );
   const isDoctorAvailable = (() => {
     if (!doctorContext?.doctor) return false;
-    const status = doctorContext.doctor.status.trim().toLowerCase();
-    return status.includes("online") || status.includes("available");
+    return isDoctorAvailableStatus(doctorContext.doctor.status);
   })();
 
   const syncDoctorAvailabilityInStorage = (nextStatus: string) => {
@@ -102,7 +108,7 @@ export default function NavBar() {
       const doctorName = normalize(doctorContext.doctor.doctorName);
       const specialist = normalize(doctorContext.doctor.specialist);
       const email = normalize(doctorContext.doctor.doctorEmail);
-      const nextAvailableToday = nextStatus.toLowerCase().includes("online") || nextStatus.toLowerCase().includes("available");
+      const nextAvailableToday = isDoctorAvailableStatus(nextStatus);
 
       const updated = parsed.map((item) => {
         const itemName = normalize(item?.name);
@@ -127,7 +133,7 @@ export default function NavBar() {
 
   const handleDoctorStatusToggle = () => {
     if (!doctorContext) return;
-    const nextStatus = isDoctorAvailable ? "not available" : "available";
+    const nextStatus = isDoctorAvailable ? "offline" : "online";
     doctorContext.updateDoctor({ status: nextStatus });
     syncDoctorAvailabilityInStorage(nextStatus);
   };

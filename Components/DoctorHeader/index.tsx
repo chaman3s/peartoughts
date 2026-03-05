@@ -83,6 +83,19 @@ function getFallbackStatIcon(stat: Stat) {
   );
 }
 
+function normalizeDoctorStatusLabel(status: string) {
+  const normalized = status.trim().toLowerCase();
+  if (normalized === "available" || normalized === "avaalble") return "online";
+  if (normalized === "not available") return "offline";
+  return normalized || "offline";
+}
+
+function formatAppointmentModeLabel(status: string) {
+  const normalized = normalizeDoctorStatusLabel(status);
+  const readable = normalized.charAt(0).toUpperCase() + normalized.slice(1);
+  return `${readable} (Appointment Mode)`;
+}
+
 export default function DoctorHeader({
   status,
   doctorImage,
@@ -114,7 +127,7 @@ export default function DoctorHeader({
           <div>
             <div className="flex w-full items-center gap-3">
               <p className="inline-flex rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-blue-600">
-                {status}
+             {formatAppointmentModeLabel(status)}
               </p>
             </div>
 

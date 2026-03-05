@@ -17,6 +17,17 @@ type Stat = {
   icon: React.ReactNode;
 
 };
+function normalizeDoctorStatusLabel(status: string) {
+  const normalized = status.trim().toLowerCase();
+  if (normalized === "available" || normalized === "avaalble") return "online";
+  if (normalized === "not available") return "offline";
+  return normalized || "offline";
+}
+function formatAppointmentModeLabel(status: string) {
+  const normalized = normalizeDoctorStatusLabel(status);
+  const readable = normalized.charAt(0).toUpperCase() + normalized.slice(1);
+  return `${readable} (Appointment Mode)`;
+}
 export default function DoctorHeader({status,doctorImage,specialist,doctorDegree,clinicLocation,doctorName,stats}:DoctorHeaderProps) {
     return(
       <>
@@ -27,7 +38,7 @@ export default function DoctorHeader({status,doctorImage,specialist,doctorDegree
           <div className="relative flex items-start justify-between gap-4">
             <div>
               <p className="inline-flex rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-blue-600">
-                { status}
+                {formatAppointmentModeLabel(status)}
               </p>
               <h2 className="mt-3 text-3xl font-semibold leading-tight text-slate-900 md:text-4xl">{doctorName}</h2>
               <p className="mt-1 text-base font-medium text-sky-600">{specialist}</p>
