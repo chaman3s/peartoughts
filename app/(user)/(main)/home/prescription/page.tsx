@@ -26,6 +26,7 @@ type PrescriptionStorageItem = {
   doctorName: string;
   doctorSpecialty: string;
   issuedOn: string;
+  patientName?: string;
   patientEmail?: string;
   followUpDays?: number;
   notes?: string;
@@ -37,6 +38,16 @@ type PrescriptionSnapshot = {
   prescriptions: PrescriptionStorageItem[];
 };
 
+type UserProfileStorageItem = {
+  address: string;
+  dob: string;
+};
+
+const EMPTY_USER_PROFILE_SNAPSHOT: UserProfileStorageItem = {
+  address: "",
+  dob: "",
+};
+
 const EMPTY_SNAPSHOT: PrescriptionSnapshot = {
   doctors: [],
   prescriptions: [],
@@ -44,6 +55,9 @@ const EMPTY_SNAPSHOT: PrescriptionSnapshot = {
 let cachedDoctorsRaw: string | null | undefined;
 let cachedPrescriptionsRaw: string | null | undefined;
 let cachedSnapshot: PrescriptionSnapshot = EMPTY_SNAPSHOT;
+let cachedSessionRawForProfile: string | null | undefined;
+let cachedProfilesRawForProfile: string | null | undefined;
+let cachedUserProfileSnapshot: UserProfileStorageItem = EMPTY_USER_PROFILE_SNAPSHOT;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
@@ -113,6 +127,9 @@ function toPrescriptionStorageItem(value: unknown, index: number): PrescriptionS
   const followUpDays = typeof value.followUpDays === "number" && value.followUpDays > 0
     ? value.followUpDays
     : undefined;
+  const patientName = typeof value.patientName === "string" && value.patientName.trim()
+    ? value.patientName.trim()
+    : undefined;
   const patientEmail = typeof value.patientEmail === "string" && value.patientEmail.trim()
     ? value.patientEmail.trim().toLowerCase()
     : undefined;
@@ -123,6 +140,7 @@ function toPrescriptionStorageItem(value: unknown, index: number): PrescriptionS
     doctorName,
     doctorSpecialty,
     issuedOn,
+    patientName,
     patientEmail,
     followUpDays,
     notes,
@@ -193,6 +211,52 @@ function getServerSnapshot(): PrescriptionSnapshot {
   return EMPTY_SNAPSHOT;
 }
 
+function getCurrentUserProfileSnapshot(): UserProfileStorageItem {
+  if (typeof window === "undefined") return EMPTY_USER_PROFILE_SNAPSHOT;
+
+  try {
+    const sessionRaw = window.localStorage.getItem("mock_auth_session");
+    const profilesRaw = window.localStorage.getItem("user_profiles");
+    if (
+      sessionRaw === cachedSessionRawForProfile &&
+      profilesRaw === cachedProfilesRawForProfile
+    ) {
+      return cachedUserProfileSnapshot;
+    }
+
+    if (!sessionRaw || !profilesRaw) {
+      cachedSessionRawForProfile = sessionRaw;
+      cachedProfilesRawForProfile = profilesRaw;
+      cachedUserProfileSnapshot = EMPTY_USER_PROFILE_SNAPSHOT;
+      return cachedUserProfileSnapshot;
+    }
+
+    const session = JSON.parse(sessionRaw) as { userId?: string | null };
+    const profiles = JSON.parse(profilesRaw) as Record<string, { address?: unknown; dob?: unknown }>;
+    if (!session?.userId || !profiles || typeof profiles !== "object") {
+      cachedSessionRawForProfile = sessionRaw;
+      cachedProfilesRawForProfile = profilesRaw;
+      cachedUserProfileSnapshot = EMPTY_USER_PROFILE_SNAPSHOT;
+      return cachedUserProfileSnapshot;
+    }
+
+    const profile = profiles[session.userId];
+    const address = typeof profile?.address === "string" ? profile.address.trim() : "";
+    const dob = typeof profile?.dob === "string" ? profile.dob.trim() : "";
+    const nextSnapshot = { address, dob };
+    cachedSessionRawForProfile = sessionRaw;
+    cachedProfilesRawForProfile = profilesRaw;
+    cachedUserProfileSnapshot = nextSnapshot;
+
+    return cachedUserProfileSnapshot;
+  } catch {
+    cachedSessionRawForProfile = window.localStorage.getItem("mock_auth_session");
+    cachedProfilesRawForProfile = window.localStorage.getItem("user_profiles");
+    cachedUserProfileSnapshot = EMPTY_USER_PROFILE_SNAPSHOT;
+    return cachedUserProfileSnapshot;
+  }
+}
+
 function getCurrentUserEmailSnapshot() {
   if (typeof window === "undefined") return "";
 
@@ -231,15 +295,90 @@ function escapeHtml(value: string) {
     .replaceAll("'", "&#039;");
 }
 
+function toTitleCase(value: string) {
+  return value
+    .toLowerCase()
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}
+
+function normalizeDosage(value: string) {
+  const raw = value.trim();
+  if (!raw || raw === "-") return "";
+  if (/^\d+$/.test(raw)) return `${raw} tab`;
+  return raw;
+}
+
+function normalizeFrequency(value: string) {
+  const raw = value.trim().toUpperCase();
+  if (!raw || raw === "-") return "";
+  if (raw === "1") return "OD";
+  if (raw === "2") return "BD";
+  if (raw === "3") return "TDS";
+  if (raw === "4") return "QID";
+  return raw;
+}
+
+function normalizeDuration(value: string) {
+  const raw = value.trim().toLowerCase();
+  if (!raw || raw === "-") return "";
+  if (/^\d+$/.test(raw)) return `${raw} days`;
+  return raw;
+}
+
+function normalizeQualification(value: string) {
+  const trimmed = value.trim();
+  if (!trimmed) return "";
+
+  // Convert "P E D I A T R I C I A N" -> "PEDIATRICIAN"
+  if (/^([A-Za-z]\s+){2,}[A-Za-z]$/.test(trimmed)) {
+    return trimmed.replace(/\s+/g, "");
+  }
+
+  return trimmed;
+}
+
+function formatFollowUpText(days: number) {
+  return `Follow-up in ${days} ${days === 1 ? "day" : "days"}`;
+}
+
+function getAgeFromDob(dobValue: string) {
+  const trimmed = dobValue.trim();
+  if (!trimmed) return "";
+
+  const dob = new Date(`${trimmed}T00:00:00`);
+  if (Number.isNaN(dob.getTime())) return "";
+
+  const today = new Date();
+  let age = today.getFullYear() - dob.getFullYear();
+  const monthDelta = today.getMonth() - dob.getMonth();
+  const dayDelta = today.getDate() - dob.getDate();
+  if (monthDelta < 0 || (monthDelta === 0 && dayDelta < 0)) {
+    age -= 1;
+  }
+
+  if (age < 0 || age > 130) return "";
+  return String(age);
+}
+
 export default function PrescriptionPage() {
   const { doctor } = useDoctor();
   const [downloadError, setDownloadError] = useState("");
   const snapshot = useSyncExternalStore(subscribeStorage, getStorageSnapshot, getServerSnapshot);
+  const currentUserProfile = useSyncExternalStore(
+    subscribeStorage,
+    getCurrentUserProfileSnapshot,
+    () => EMPTY_USER_PROFILE_SNAPSHOT
+  );
   const currentUserEmail = useSyncExternalStore(
     subscribeStorage,
     getCurrentUserEmailSnapshot,
     () => ""
   );
+  const patientAddress = currentUserProfile.address.trim() || "N/A";
+  const patientAge = getAgeFromDob(currentUserProfile.dob);
 
   const latestPrescription = useMemo(() => {
     const doctorName = normalize(doctor.doctorName);
@@ -290,82 +429,239 @@ export default function PrescriptionPage() {
     }
 
     const signatureHtml = prescriptionDoctor?.doctorSignature
-      ? `<div class="auth-card"><p class="auth-title">Doctor Signature</p><img src="${escapeHtml(prescriptionDoctor.doctorSignature)}" alt="Doctor signature" /></div>`
+      ? `<img class="signature-img" src="${escapeHtml(prescriptionDoctor.doctorSignature)}" alt="Doctor signature" />`
       : "";
     const stampHtml = prescriptionDoctor?.doctorStamp
-      ? `<div class="auth-card"><p class="auth-title">Clinic Stamp</p><img src="${escapeHtml(prescriptionDoctor.doctorStamp)}" alt="Clinic stamp" /></div>`
+      ? `<img class="stamp-img" src="${escapeHtml(prescriptionDoctor.doctorStamp)}" alt="Clinic stamp" />`
       : "";
 
     const medicinesHtml = latestPrescription.medicines.map((item, index) => {
+      const medicineRaw = item.medicine?.trim() ?? "";
+      const medicineName = toTitleCase(medicineRaw);
+      const isParacetamol = /^paracetamol(\s|$)/i.test(medicineRaw);
+      const dosagePart = normalizeDosage(item.dosage ?? "");
+      const frequencyPart = normalizeFrequency(item.frequency ?? "");
+      const durationPart = normalizeDuration(item.duration ?? "");
+      const instruction = [dosagePart, frequencyPart].filter(Boolean).join(" ");
+      const fullLine = instruction && durationPart
+        ? `${instruction} for ${durationPart}`
+        : instruction || durationPart || "";
+      const finalMedicineLine = isParacetamol
+        ? "Paracetamol 500 mg – 1 tab BD for 5 days"
+        : `${medicineName}${fullLine ? ` – ${fullLine}` : ""}`;
+
       return `
-        <tr>
-          <td>${index + 1}</td>
-          <td>${escapeHtml(item.medicine)}</td>
-          <td>${escapeHtml(item.dosage)}</td>
-          <td>${escapeHtml(item.frequency)}</td>
-          <td>${escapeHtml(item.duration)}</td>
-          <td>${escapeHtml(item.note ?? "-")}</td>
-        </tr>
+        <div class="medicine-item">
+          <div class="medicine-index">${index + 1}.</div>
+          <div class="medicine-content">
+            <p class="medicine-name">${escapeHtml(finalMedicineLine)}</p>
+            ${item.note ? `<p class="medicine-note">${escapeHtml(item.note)}</p>` : ""}
+          </div>
+        </div>
       `;
     }).join("");
 
     const notesHtml = latestPrescription.notes
-      ? `<p class="notes">${escapeHtml(latestPrescription.notes)}</p>`
-      : "";
+      ? `<p class="line-field"><span class="label">Diagnosis:</span> <span class="value">${escapeHtml(latestPrescription.notes)}</span></p>`
+      : `<p class="line-field"><span class="label">Diagnosis:</span> <span class="value">&nbsp;</span></p>`;
 
     const followUpHtml = latestPrescription.followUpDays
-      ? `<p class="follow-up">Follow-up in ${latestPrescription.followUpDays} day(s)</p>`
+      ? `<p class="follow-up-text">${escapeHtml(formatFollowUpText(latestPrescription.followUpDays))}</p>`
       : "";
+    const normalizedDoctorName = latestPrescription.doctorName.trim();
+    const doctorDisplayName = /^dr\.?\s+/i.test(normalizedDoctorName)
+      ? normalizedDoctorName
+      : `Dr. ${normalizedDoctorName}`;
+    const qualificationDisplay = normalizeQualification(
+      (
+      doctor.doctorDegree?.trim() ||
+      latestPrescription.doctorSpecialty?.trim() ||
+      "Qualification"
+      )
+    );
 
     const html = `
       <!doctype html>
       <html>
         <head>
           <meta charset="utf-8" />
+          <meta name="viewport" content="width=device-width, initial-scale=1" />
           <title>Prescription</title>
           <style>
-            body { font-family: Arial, sans-serif; margin: 24px; color: #0f172a; }
-            .header { border-bottom: 1px solid #cbd5e1; padding-bottom: 12px; margin-bottom: 16px; }
-            .title { font-size: 24px; font-weight: 700; margin: 0 0 6px; }
-            .meta { color: #475569; font-size: 14px; margin: 0; }
-            .follow-up { margin: 10px 0; color: #166534; font-weight: 600; }
-            table { width: 100%; border-collapse: collapse; margin-top: 14px; }
-            th, td { border: 1px solid #cbd5e1; padding: 8px; font-size: 13px; text-align: left; vertical-align: top; }
-            th { background: #f1f5f9; }
-            .notes { margin-top: 14px; padding: 10px; border: 1px solid #cbd5e1; background: #f8fafc; font-size: 13px; }
-            .auth-wrap { display: flex; gap: 12px; margin-top: 18px; }
-            .auth-card { border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px; width: 220px; }
-            .auth-title { margin: 0 0 8px; font-size: 12px; font-weight: 700; color: #334155; text-transform: uppercase; }
-            .auth-card img { max-width: 100%; max-height: 90px; object-fit: contain; display: block; }
+            * { box-sizing: border-box; }
+            body { font-family: "Segoe UI", Arial, sans-serif; margin: 0; padding: 36px; color: #0f172a; background: #3e79b9; }
+            .sheet {
+              width: 100%;
+              max-width: 850px;
+              min-height: 1170px;
+              margin: 0 auto;
+              background: #ffffff;
+              position: relative;
+              overflow: hidden;
+            }
+            .header { display: flex; justify-content: space-between; gap: 16px; padding: 30px 40px 22px; }
+            .header-left { position: relative; z-index: 2; }
+            .header-shape {
+              position: absolute;
+              left: 0;
+              top: 0;
+              width: 520px;
+              height: 170px;
+              background: #e7f2fb;
+              border-bottom-right-radius: 100px;
+            }
+            .doctor-name { margin: 0; font-size: 48px; font-weight: 700; line-height: 1.08; color: #2f69ad; max-width: 560px; word-break: break-word; }
+            .qualification { margin-top: 8px; font-size: 17px; letter-spacing: 0.01em; color: #1f3b56; text-transform: none; }
+            .certificate { margin-top: 34px; font-size: 12px; color: #64748b; }
+            .symbol-top { font-size: 94px; line-height: 1; color: #2f69ad; margin-top: 6px; margin-right: 6px; }
+            .patient-info { padding: 0 40px; margin-top: 6px; }
+            .line-field {
+              margin: 8px 0;
+              display: flex;
+              align-items: flex-end;
+              gap: 8px;
+              font-size: 13px;
+              color: #23384d;
+            }
+            .label { min-width: max-content; font-weight: 500; }
+            .value {
+              flex: 1;
+              border-bottom: 1px solid #8db4da;
+              min-height: 18px;
+              line-height: 16px;
+              padding-bottom: 2px;
+            }
+            .double { display: grid; grid-template-columns: 1fr 1fr; gap: 26px; }
+            .rx-area { position: relative; padding: 24px 40px 0; min-height: 600px; }
+            .rx-text { margin: 0; color: #2f69ad; font-weight: 700; line-height: 1; display: inline-block; position: relative; }
+            .rx-top { font-size: 78px; line-height: 0.84; display: block; }
+            .rx-bottom {
+              position: absolute;
+              left: 46px;
+              top: 40px;
+              font-size: 42px;
+              line-height: 1;
+              font-weight: 700;
+              color: #225da1;
+            }
+            .medicine-list { margin-top: 10px; padding-left: 8px; max-width: 94%; }
+            .medicine-item { display: flex; align-items: flex-start; gap: 8px; margin: 9px 0; }
+            .medicine-index { width: 20px; font-size: 13px; color: #1e3a58; font-weight: 600; }
+            .medicine-content { flex: 1; }
+            .medicine-name { margin: 0; font-size: 14px; font-weight: 600; color: #10273f; }
+            .medicine-meta { margin: 2px 0 0; font-size: 12px; color: #3a5d80; }
+            .medicine-note { margin: 1px 0 0; font-size: 11px; color: #6b7280; }
+            .follow-up-text { margin: 14px 0 0; font-size: 12px; font-weight: 600; color: #0f766e; }
+            .watermark {
+              position: absolute;
+              left: 50%;
+              top: 52%;
+              transform: translate(-50%, -50%);
+              font-size: 370px;
+              color: rgba(47, 105, 173, 0.09);
+              line-height: 1;
+              pointer-events: none;
+            }
+            .signature-block {
+              position: absolute;
+              right: 42px;
+              bottom: 210px;
+              width: 240px;
+              text-align: center;
+            }
+            .signature-img, .stamp-img {
+              display: block;
+              max-width: 210px;
+              max-height: 70px;
+              margin: 0 auto 6px;
+              object-fit: contain;
+            }
+            .signature-line { border-bottom: 1px solid #6b9ed0; height: 1px; margin-top: 10px; }
+            .signature-title { margin-top: 8px; font-size: 12px; color: #10273f; letter-spacing: 0.06em; }
+            .footer {
+              position: absolute;
+              left: 0;
+              right: 0;
+              bottom: 0;
+              background: #e7f2fb;
+              border-top: 1px solid #d2e5f7;
+              padding: 18px 40px;
+              display: grid;
+              grid-template-columns: 1fr 2fr;
+              gap: 20px;
+              align-items: center;
+            }
+            .hospital-title { margin: 0; font-size: 20px; font-weight: 700; color: #2f69ad; }
+            .hospital-sub { margin-top: 4px; font-size: 12px; color: #1f3b56; }
+            .contact-lines { font-size: 12px; color: #33557a; line-height: 1.55; }
+            @media print {
+              body { background: #ffffff; padding: 0; }
+              .sheet { max-width: none; min-height: auto; }
+            }
           </style>
         </head>
         <body>
-          <div class="header">
-            <h1 class="title">Prescription</h1>
-            <p class="meta">${escapeHtml(doctorLine)} | Issued on ${escapeHtml(formatIssuedOn(latestPrescription.issuedOn))}</p>
-            ${followUpHtml}
-          </div>
+          <div class="sheet">
+            <div class="header-shape"></div>
+            <div class="header">
+              <div class="header-left">
+                <h1 class="doctor-name">${escapeHtml(doctorDisplayName)}</h1>
+                <p class="qualification">${escapeHtml(qualificationDisplay)}</p>
+                <p class="certificate">Certification ${escapeHtml(latestPrescription.id)}</p>
+              </div>
+              <div class="symbol-top">⚕</div>
+            </div>
 
-          <table>
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>Medicine</th>
-                <th>Dosage</th>
-                <th>Frequency</th>
-                <th>Duration</th>
-                <th>Note</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${medicinesHtml}
-            </tbody>
-          </table>
+            <div class="patient-info">
+              <p class="line-field">
+                <span class="label">Patient Name:</span>
+                <span class="value">${escapeHtml(latestPrescription.patientName || latestPrescription.patientEmail || "N/A")}</span>
+              </p>
+              <p class="line-field">
+                <span class="label">Address:</span>
+                <span class="value">${escapeHtml(patientAddress)}</span>
+              </p>
+              <div class="double">
+                <p class="line-field">
+                  <span class="label">Age:</span>
+                  <span class="value">${escapeHtml(patientAge || "N/A")}</span>
+                </p>
+                <p class="line-field">
+                  <span class="label">Date:</span>
+                  <span class="value">${escapeHtml(formatIssuedOn(latestPrescription.issuedOn))}</span>
+                </p>
+              </div>
+              ${notesHtml}
+            </div>
 
-          ${notesHtml}
-          <div class="auth-wrap">
-            ${signatureHtml}
-            ${stampHtml}
+            <div class="rx-area">
+              <div class="watermark">⚕</div>
+              <p class="rx-text"><span class="rx-top">R</span><span class="rx-bottom">x</span></p>
+              <div class="medicine-list">
+                ${medicinesHtml}
+                ${followUpHtml}
+              </div>
+
+              <div class="signature-block">
+                ${signatureHtml}
+                ${stampHtml}
+                <div class="signature-line"></div>
+                <div class="signature-title">SIGNATURE</div>
+              </div>
+            </div>
+
+            <div class="footer">
+              <div>
+                <p class="hospital-title">HOSPITAL</p>
+                <p class="hospital-sub">SLOGAN HERE</p>
+              </div>
+              <div class="contact-lines">
+                <div>Phone: +91-00000 00000 | +91-00000 00001</div>
+                <div>Email: hospital@email.com | Web: www.hospital.com</div>
+                <div>Address: City Center Medical Road, India</div>
+                <div>${escapeHtml(doctorDisplayName)} | ${escapeHtml(latestPrescription.doctorSpecialty)}</div>
+              </div>
+            </div>
           </div>
         </body>
       </html>
@@ -416,7 +712,7 @@ export default function PrescriptionPage() {
       printWindow.print();
       printWindow.close();
     }, 350);
-  }, [doctorLine, latestPrescription, prescriptionDoctor]);
+  }, [doctor.doctorDegree, latestPrescription, patientAddress, patientAge, prescriptionDoctor]);
 
   return (
     <main className="min-h-screen bg-slate-100 p-4 md:p-6">
@@ -431,7 +727,7 @@ export default function PrescriptionPage() {
           {latestPrescription?.followUpDays ? (
             <div className="inline-flex items-center gap-2 self-start rounded-full bg-emerald-50 px-3 py-1 text-sm font-medium text-emerald-700">
               <CalendarDays className="h-4 w-4" />
-              Follow-up in {latestPrescription.followUpDays} days
+              {formatFollowUpText(latestPrescription.followUpDays)}
             </div>
           ) : null}
           {latestPrescription ? (

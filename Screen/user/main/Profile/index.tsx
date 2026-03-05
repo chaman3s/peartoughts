@@ -26,6 +26,7 @@ type ProfileFormState = {
   fullName: string;
   email: string;
   phone: string;
+  address: string;
   dob: string;
   gender: Gender;
   bloodGroup: string;
@@ -46,6 +47,7 @@ const defaultFormState: ProfileFormState = {
   fullName: "",
   email: "",
   phone: "",
+  address: "",
   dob: "",
   gender: "",
   bloodGroup: "",
@@ -310,6 +312,7 @@ export default function UserProfileScreen() {
     { label: "Full Name", value: savedProfile.fullName },
     { label: "Email", value: savedProfile.email },
     { label: "Phone", value: savedProfile.phone },
+    { label: "Address", value: savedProfile.address },
     { label: "Gender", value: savedProfile.gender },
     { label: "Date of Birth", value: formatDate(savedProfile.dob) },
     { label: "Lifestyle", value: savedProfile.lifestyle },
@@ -343,6 +346,7 @@ export default function UserProfileScreen() {
     savedProfile.fullName,
     savedProfile.email,
     savedProfile.phone,
+    savedProfile.address,
     savedProfile.dob,
     savedProfile.gender,
     savedProfile.bloodGroup,
@@ -546,6 +550,14 @@ export default function UserProfileScreen() {
                   className={inputClassName}
                   value={formData.phone}
                   onChange={(e) => updateField("phone", e.target.value)}
+                />
+              </div>
+              <div>
+                <label className={labelClassName}>Address</label>
+                <input
+                  className={inputClassName}
+                  value={formData.address}
+                  onChange={(e) => updateField("address", e.target.value)}
                 />
               </div>
               <div>

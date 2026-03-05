@@ -1,12 +1,20 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import { useDoctor } from "@/ContextApi/DoctorProfileContext";
 
 type MedicineDraft = {
   id: string;
   medicine: string;
+  dosage: string;
+  frequency: string;
+  duration: string;
+  note: string;
+};
+
+type MedicineTemplate = {
+  name: string;
   dosage: string;
   frequency: string;
   duration: string;
@@ -40,6 +48,12 @@ type StoredPatient = {
   avatarSrc: string;
 };
 
+type ToastItem = {
+  id: string;
+  type: "success" | "error" | "info";
+  message: string;
+};
+
 const newMedicine = (): MedicineDraft => ({
   id: `med-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
   medicine: "",
@@ -48,6 +62,23 @@ const newMedicine = (): MedicineDraft => ({
   duration: "",
   note: "",
 });
+
+const MEDICINE_OPTIONS: MedicineTemplate[] = [
+  { name: "Paracetamol 500 mg", dosage: "1 tab", frequency: "BD", duration: "5 days", note: "After food" },
+  { name: "Amoxicillin 500mg", dosage: "1 capsule", frequency: "Three times a day", duration: "5 days", note: "Complete full course" },
+  { name: "Cetirizine 10mg", dosage: "1 tablet", frequency: "Once at night", duration: "5 days", note: "May cause mild drowsiness" },
+  { name: "Azithromycin 500mg", dosage: "1 tablet", frequency: "Once a day", duration: "3 days", note: "Take 1 hour before meal" },
+  { name: "Omeprazole 20mg", dosage: "1 capsule", frequency: "Once before breakfast", duration: "7 days", note: "Take on empty stomach" },
+  { name: "Ibuprofen 400mg", dosage: "1 tablet", frequency: "Twice a day", duration: "3 days", note: "Take after food" },
+  { name: "Dolo 650mg", dosage: "1 tablet", frequency: "SOS for fever", duration: "2 days", note: "Max 3 tablets/day" },
+  { name: "Pantoprazole 40mg", dosage: "1 tablet", frequency: "Once before breakfast", duration: "7 days", note: "Swallow whole" },
+];
+
+function getMedicineSuggestions(query: string) {
+  const normalized = query.trim().toLowerCase();
+  if (!normalized) return [];
+  return MEDICINE_OPTIONS.filter((item) => item.name.toLowerCase().includes(normalized)).slice(0, 6);
+}
 
 function getInitials(name: string) {
   const tokens = name.trim().split(/\s+/).filter(Boolean);
@@ -169,6 +200,10 @@ export default function DoctorPatientPrescription() {
   const [medicines, setMedicines] = useState<MedicineDraft[]>([newMedicine()]);
   const [submitMessage, setSubmitMessage] = useState("");
   const [savedPrescriptions, setSavedPrescriptions] = useState<SavedPrescription[]>([]);
+  const [activeMedicineInputId, setActiveMedicineInputId] = useState("");
+  const [toasts, setToasts] = useState<ToastItem[]>([]);
+  const toastIdRef = useRef(0);
+  const prescriptionIdRef = useRef(0);
 
   const validMedicineCount = useMemo(
     () => medicines.filter((item) => item.medicine.trim()).length,
@@ -238,6 +273,37 @@ export default function DoctorPatientPrescription() {
     setMedicines((prev) => prev.map((item) => (item.id === id ? { ...item, [field]: value } : item)));
   };
 
+  const pushToast = (type: ToastItem["type"], message: string) => {
+    toastIdRef.current += 1;
+    const id = `toast-${toastIdRef.current}`;
+    setToasts((prev) => [...prev, { id, type, message }]);
+    window.setTimeout(() => {
+      setToasts((prev) => prev.filter((item) => item.id !== id));
+    }, 3200);
+  };
+
+  const dismissToast = (id: string) => {
+    setToasts((prev) => prev.filter((item) => item.id !== id));
+  };
+
+  const applyMedicineSuggestion = (id: string, suggestion: MedicineTemplate) => {
+    setMedicines((prev) =>
+      prev.map((item) =>
+        item.id === id
+          ? {
+              ...item,
+              medicine: suggestion.name,
+              dosage: suggestion.dosage,
+              frequency: suggestion.frequency,
+              duration: suggestion.duration,
+              note: suggestion.note,
+            }
+          : item
+      )
+    );
+    setActiveMedicineInputId("");
+  };
+
   const removeMedicine = (id: string) => {
     setMedicines((prev) => (prev.length > 1 ? prev.filter((item) => item.id !== id) : prev));
   };
@@ -278,8 +344,9 @@ export default function DoctorPatientPrescription() {
       return;
     }
 
+    prescriptionIdRef.current += 1;
     const payload: SavedPrescription = {
-      id: `rx-${Date.now()}`,
+      id: `rx-${prescriptionIdRef.current}`,
       doctorName,
       doctorSpecialty,
       issuedOn: new Date().toISOString(),
@@ -310,11 +377,13 @@ export default function DoctorPatientPrescription() {
     setFollowUpDays("");
     setNotes("");
     setMedicines([newMedicine()]);
+    setIsFormOpen(false);
+    pushToast("success", "Prescription created successfully.");
   };
 
   const handleCreatePrescription = (patient: StoredPatient) => {
     if (!isDoctorProfileComplete) {
-      window.alert("First, you need to complete your profile.");
+      pushToast("error", "First, you need to complete your profile.");
       return;
     }
 
@@ -484,9 +553,12 @@ export default function DoctorPatientPrescription() {
                 <button
                   type="button"
                   onClick={() => setIsFormOpen(false)}
-                  className="rounded-full border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:bg-slate-100"
+                  className="grid h-9 w-9 place-items-center rounded-full border border-slate-300 bg-white text-slate-700 transition hover:bg-slate-100"
+                  aria-label="Close prescription window"
                 >
-                  Close
+                  <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden="true">
+                    <path d="M6.7 5.3 12 10.6l5.3-5.3 1.4 1.4-5.3 5.3 5.3 5.3-1.4 1.4-5.3-5.3-5.3 5.3-1.4-1.4 5.3-5.3-5.3-5.3z" fill="currentColor" />
+                  </svg>
                 </button>
               </div>
             </header>
@@ -588,7 +660,31 @@ export default function DoctorPatientPrescription() {
                         </div>
 
                         <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                          <input value={item.medicine} onChange={(event) => updateMedicine(item.id, "medicine", event.target.value)} placeholder="Medicine name *" className="rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-sky-500" />
+                          <div className="relative">
+                            <input
+                              value={item.medicine}
+                              onChange={(event) => updateMedicine(item.id, "medicine", event.target.value)}
+                              onFocus={() => setActiveMedicineInputId(item.id)}
+                              onBlur={() => setTimeout(() => setActiveMedicineInputId(""), 120)}
+                              placeholder="Medicine name *"
+                              className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-sky-500"
+                            />
+                            {activeMedicineInputId === item.id && getMedicineSuggestions(item.medicine).length > 0 ? (
+                              <div className="absolute z-20 mt-1 max-h-44 w-full overflow-y-auto rounded-xl border border-slate-200 bg-white p-1 shadow-lg">
+                                {getMedicineSuggestions(item.medicine).map((suggestion) => (
+                                  <button
+                                    key={suggestion.name}
+                                    type="button"
+                                    onMouseDown={() => applyMedicineSuggestion(item.id, suggestion)}
+                                    className="w-full rounded-lg px-2.5 py-2 text-left hover:bg-slate-100"
+                                  >
+                                    <p className="text-sm font-medium text-slate-800">{suggestion.name}</p>
+                                    <p className="text-xs text-slate-500">{suggestion.dosage} • {suggestion.frequency}</p>
+                                  </button>
+                                ))}
+                              </div>
+                            ) : null}
+                          </div>
                           <input value={item.dosage} onChange={(event) => updateMedicine(item.id, "dosage", event.target.value)} placeholder="Dosage (e.g. 1 tablet)" className="rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-sky-500" />
                           <input value={item.frequency} onChange={(event) => updateMedicine(item.id, "frequency", event.target.value)} placeholder="Frequency (e.g. Twice a day)" className="rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-sky-500" />
                           <input value={item.duration} onChange={(event) => updateMedicine(item.id, "duration", event.target.value)} placeholder="Duration (e.g. 5 days)" className="rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-sky-500" />
@@ -636,6 +732,48 @@ export default function DoctorPatientPrescription() {
               </footer>
             </form>
           </section>
+        </div>
+      ) : null}
+
+      {toasts.length > 0 ? (
+        <div className="fixed right-3 top-3 z-[60] flex w-[min(92vw,360px)] flex-col gap-2 md:right-6 md:top-6">
+          {toasts.map((toast) => {
+            const tone =
+              toast.type === "success"
+                ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+                : toast.type === "error"
+                ? "border-rose-200 bg-rose-50 text-rose-800"
+                : "border-sky-200 bg-sky-50 text-sky-800";
+
+            const icon =
+              toast.type === "success"
+                ? "✓"
+                : toast.type === "error"
+                ? "✕"
+                : "i";
+
+            return (
+              <div
+                key={toast.id}
+                className={`flex items-start gap-2 rounded-xl border px-3 py-2.5 shadow-[0_12px_24px_-18px_rgba(15,23,42,0.5)] ${tone}`}
+                role="status"
+                aria-live="polite"
+              >
+                <span className="mt-0.5 inline-flex h-5 w-5 items-center justify-center rounded-full bg-white/80 text-xs font-bold">
+                  {icon}
+                </span>
+                <p className="flex-1 text-sm font-medium">{toast.message}</p>
+                <button
+                  type="button"
+                  onClick={() => dismissToast(toast.id)}
+                  className="rounded-md px-1 text-xs opacity-70 transition hover:bg-white/60 hover:opacity-100"
+                  aria-label="Dismiss notification"
+                >
+                  ✕
+                </button>
+              </div>
+            );
+          })}
         </div>
       ) : null}
     </main>
