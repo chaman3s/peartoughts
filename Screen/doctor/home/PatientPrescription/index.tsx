@@ -74,6 +74,17 @@ const MEDICINE_OPTIONS: MedicineTemplate[] = [
   { name: "Pantoprazole 40mg", dosage: "1 tablet", frequency: "Once before breakfast", duration: "7 days", note: "Swallow whole" },
 ];
 
+const DIAGNOSIS_OPTIONS = [
+  "Viral fever",
+  "Common cold",
+  "Acute pharyngitis",
+  "Gastritis",
+  "Migraine",
+  "Hypertension",
+  "Type 2 diabetes mellitus",
+  "Allergic rhinitis",
+];
+
 function getMedicineSuggestions(query: string) {
   const normalized = query.trim().toLowerCase();
   if (!normalized) return [];
@@ -196,6 +207,7 @@ export default function DoctorPatientPrescription() {
   const [patientName, setPatientName] = useState("");
   const [patientEmail, setPatientEmail] = useState("");
   const [followUpDays, setFollowUpDays] = useState("");
+  const [diagnosis, setDiagnosis] = useState("");
   const [notes, setNotes] = useState("");
   const [medicines, setMedicines] = useState<MedicineDraft[]>([newMedicine()]);
   const [submitMessage, setSubmitMessage] = useState("");
@@ -203,7 +215,6 @@ export default function DoctorPatientPrescription() {
   const [activeMedicineInputId, setActiveMedicineInputId] = useState("");
   const [toasts, setToasts] = useState<ToastItem[]>([]);
   const toastIdRef = useRef(0);
-  const prescriptionIdRef = useRef(0);
 
   const validMedicineCount = useMemo(
     () => medicines.filter((item) => item.medicine.trim()).length,
@@ -344,16 +355,16 @@ export default function DoctorPatientPrescription() {
       return;
     }
 
-    prescriptionIdRef.current += 1;
+    const uniquePrescriptionId = `rx-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
     const payload: SavedPrescription = {
-      id: `rx-${prescriptionIdRef.current}`,
+      id: uniquePrescriptionId,
       doctorName,
       doctorSpecialty,
       issuedOn: new Date().toISOString(),
       patientName: patientName.trim() || undefined,
       patientEmail: normalizedPatientEmail,
       followUpDays: Number(followUpDays) > 0 ? Number(followUpDays) : undefined,
-      notes: notes.trim() || undefined,
+      notes: diagnosis.trim() || notes.trim() || undefined,
       medicines: finalMedicines,
     };
 
@@ -375,6 +386,7 @@ export default function DoctorPatientPrescription() {
     setPatientName("");
     setPatientEmail("");
     setFollowUpDays("");
+    setDiagnosis("");
     setNotes("");
     setMedicines([newMedicine()]);
     setIsFormOpen(false);
@@ -510,8 +522,11 @@ export default function DoctorPatientPrescription() {
             </p>
           ) : (
             <div className="space-y-3">
-              {savedPrescriptions.map((item) => (
-                <article key={item.id} className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
+              {savedPrescriptions.map((item, index) => (
+                <article
+                  key={`${item.id}-${item.issuedOn}-${item.patientEmail ?? "no-email"}-${index}`}
+                  className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4"
+                >
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <p className="text-sm font-semibold text-slate-900">
                       {item.patientName || "Patient"} <span className="text-slate-500">({item.patientEmail || "No email"})</span>
@@ -616,6 +631,24 @@ export default function DoctorPatientPrescription() {
                       />
                     </label>
                   </div>
+                </div>
+
+                <div className="rounded-2xl border border-slate-200 bg-white p-4">
+                  <label className="block space-y-1.5">
+                    <span className="text-sm font-medium text-slate-700">Diagnosis</span>
+                    <input
+                      list="diagnosis-options"
+                      value={diagnosis}
+                      onChange={(event) => setDiagnosis(event.target.value)}
+                      placeholder="Select or type diagnosis"
+                      className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-sky-500"
+                    />
+                    <datalist id="diagnosis-options">
+                      {DIAGNOSIS_OPTIONS.map((item) => (
+                        <option key={item} value={item} />
+                      ))}
+                    </datalist>
+                  </label>
                 </div>
 
                 <div className="rounded-2xl border border-slate-200 bg-white p-4">

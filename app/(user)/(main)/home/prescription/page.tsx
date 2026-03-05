@@ -8,6 +8,12 @@ import { useDoctor } from "@/ContextApi/doctorContext";
 type DoctorStorageItem = {
   name: string;
   specialty: string;
+  clinicName?: string;
+  clinicAddress?: string;
+  clinicLocation?: string;
+  doctorEmail?: string;
+  doctorPhone?: string;
+  doctorLicenseNo?: string;
   doctorSignature?: string;
   doctorStamp?: string;
 };
@@ -72,6 +78,26 @@ function toDoctorStorageItem(value: unknown): DoctorStorageItem | null {
   const name = typeof value.name === "string" ? value.name.trim() : "";
   const specialty = typeof value.specialty === "string" ? value.specialty.trim() : "";
   if (!name || !specialty) return null;
+  const clinicName = typeof value.clinicName === "string" && value.clinicName.trim()
+    ? value.clinicName.trim()
+    : undefined;
+  const clinicAddress = typeof value.clinicAddress === "string" && value.clinicAddress.trim()
+    ? value.clinicAddress.trim()
+    : undefined;
+  const clinicLocation = typeof value.clinicLocation === "string" && value.clinicLocation.trim()
+    ? value.clinicLocation.trim()
+    : undefined;
+  const doctorEmail = typeof value.doctorEmail === "string" && value.doctorEmail.trim()
+    ? value.doctorEmail.trim()
+    : undefined;
+  const doctorPhone = typeof value.doctorPhone === "number" && Number.isFinite(value.doctorPhone)
+    ? String(value.doctorPhone)
+    : typeof value.doctorPhone === "string" && value.doctorPhone.trim()
+      ? value.doctorPhone.trim()
+      : undefined;
+  const doctorLicenseNo = typeof value.doctorLicenseNo === "string" && value.doctorLicenseNo.trim()
+    ? value.doctorLicenseNo.trim()
+    : undefined;
   const doctorSignature = typeof value.doctorSignature === "string" && value.doctorSignature.trim()
     ? value.doctorSignature.trim()
     : typeof value.signature === "string" && value.signature.trim()
@@ -82,7 +108,18 @@ function toDoctorStorageItem(value: unknown): DoctorStorageItem | null {
     : typeof value.stamp === "string" && value.stamp.trim()
       ? value.stamp.trim()
       : undefined;
-  return { name, specialty, doctorSignature, doctorStamp };
+  return {
+    name,
+    specialty,
+    clinicName,
+    clinicAddress,
+    clinicLocation,
+    doctorEmail,
+    doctorPhone,
+    doctorLicenseNo,
+    doctorSignature,
+    doctorStamp,
+  };
 }
 
 function toPrescriptionMedicine(value: unknown, index: number): PrescriptionMedicine | null {
@@ -480,7 +517,16 @@ export default function PrescriptionPage() {
       )
     );
     const prescriptionNumber = String(Math.floor(100000 + Math.random() * 900000));
-    const doctorRegistrationNumber = doctor.doctorLicenseNo?.trim() || "N/A";
+    const doctorRegistrationNumber = prescriptionDoctor?.doctorLicenseNo?.trim() || doctor.doctorLicenseNo?.trim() || "N/A";
+    const clinicNameDisplay = prescriptionDoctor?.clinicName?.trim() || doctor.clinicName?.trim() || "N/A";
+    const clinicAddressDisplay =
+      prescriptionDoctor?.clinicAddress?.trim() ||
+      prescriptionDoctor?.clinicLocation?.trim() ||
+      doctor.clinicAddress?.trim() ||
+      doctor.clinicLocation?.trim() ||
+      "N/A";
+    const doctorPhoneDisplay = prescriptionDoctor?.doctorPhone?.trim() || "N/A";
+    const doctorEmailDisplay = prescriptionDoctor?.doctorEmail?.trim() || "N/A";
 
     const html = `
       <!doctype html>
@@ -654,13 +700,13 @@ export default function PrescriptionPage() {
 
             <div class="footer">
               <div>
-                <p class="hospital-title">HOSPITAL</p>
-                <p class="hospital-sub">SLOGAN HERE</p>
+                <p class="hospital-title">${escapeHtml(clinicNameDisplay)}</p>
+                <p class="hospital-sub">${escapeHtml(latestPrescription.doctorSpecialty || "Clinic")}</p>
               </div>
               <div class="contact-lines">
-                <div>Phone: +91-00000 00000 | +91-00000 00001</div>
-                <div>Email: hospital@email.com | Web: www.hospital.com</div>
-                <div>Address: City Center Medical Road, India</div>
+                <div>Phone: ${escapeHtml(doctorPhoneDisplay)}</div>
+                <div>Email: ${escapeHtml(doctorEmailDisplay)}</div>
+                <div>Address: ${escapeHtml(clinicAddressDisplay)}</div>
                 <div>${escapeHtml(doctorDisplayName)} | ${escapeHtml(latestPrescription.doctorSpecialty)}</div>
               </div>
             </div>
@@ -714,7 +760,17 @@ export default function PrescriptionPage() {
       printWindow.print();
       printWindow.close();
     }, 350);
-  }, [doctor.doctorDegree, doctor.doctorLicenseNo, latestPrescription, patientAddress, patientAge, prescriptionDoctor]);
+  }, [
+    doctor.clinicAddress,
+    doctor.clinicLocation,
+    doctor.clinicName,
+    doctor.doctorDegree,
+    doctor.doctorLicenseNo,
+    latestPrescription,
+    patientAddress,
+    patientAge,
+    prescriptionDoctor,
+  ]);
 
   return (
     <main className="min-h-screen bg-slate-100 p-4 md:p-6">

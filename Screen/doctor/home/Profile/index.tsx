@@ -28,6 +28,7 @@ type DashboardDoctor = {
   tags: string[];
   availableToday: boolean;
   doctorEmail?: string;
+  doctorPhone?: string;
   slotSetting?: PersistedSlotSettings;
 };
 
@@ -151,6 +152,7 @@ function syncDoctorDataToLocalStorage(doctor: {
   doctorLicenseNo?: string;
   status: string;
   doctorEmail: string;
+  doctorPhone?: number;
   stats: { label: string; value: string }[];
 }, tags?: string[], slotSetting?: SlotSettings) {
   if (typeof window === "undefined") return;
@@ -197,6 +199,9 @@ function syncDoctorDataToLocalStorage(doctor: {
     tags: tags && tags.length ? tags : existing?.tags || ["Online", "Top Rated"],
     availableToday: doctor.status.toLowerCase().includes("online") || doctor.status.toLowerCase().includes("available"),
     doctorEmail: mail || existing?.doctorEmail,
+    doctorPhone: typeof doctor.doctorPhone === "number" && Number.isFinite(doctor.doctorPhone) && doctor.doctorPhone > 0
+      ? String(doctor.doctorPhone)
+      : existing?.doctorPhone,
     slotSetting: slotSetting ? normalizeSlotSetting(slotSetting) : existing?.slotSetting,
   };
 
@@ -295,6 +300,7 @@ export default function DoctorProfile() {
                 doctorLicenseNo: updates.doctorLicenseNo ?? doctor.doctorLicenseNo,
                 status: updates.status ?? doctor.status,
                 doctorEmail: updates.doctorEmail ?? doctor.doctorEmail,
+                doctorPhone: updates.doctorPhone ?? doctor.doctorPhone,
                 stats: updates.stats ?? doctor.stats,
               };
               syncDoctorDataToLocalStorage(nextDoctorData, tags);
@@ -344,6 +350,7 @@ export default function DoctorProfile() {
                   doctorLicenseNo: doctor.doctorLicenseNo,
                   status: doctor.status,
                   doctorEmail: doctor.doctorEmail,
+                  doctorPhone: doctor.doctorPhone,
                   stats: doctor.stats,
                 },
                 undefined,
