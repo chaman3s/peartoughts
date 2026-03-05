@@ -44,6 +44,13 @@ const dayPresets: Record<string, string[]> = {
   twf: ["tue", "wed", "fri"],
 };
 
+function toLocalIsoDate(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
 function getDayPresetKey(days: string[]) {
   const normalize = (arr: string[]) => [...arr].sort().join(",");
   const current = normalize(days);
@@ -59,6 +66,7 @@ export default function SlotForm({ value, onChange, onsubmit }: Props) {
   const [scheduleRows, setScheduleRows] = useState<SlotCustomGroup[]>(value.customSlots);
   const [slotDuration, setSlotDuration] = useState<number>(value.slotDuration);
   const [slotPrice, setSlotPrice] = useState<number>(value.slotPrice);
+  const [startDate, setStartDate] = useState<string>(value.startDate ?? toLocalIsoDate(new Date()));
   const selectedDaysCount = useMemo(() => days.length, [days]);
 
   const handleDayPreset = (preset: string) => {
@@ -96,6 +104,7 @@ export default function SlotForm({ value, onChange, onsubmit }: Props) {
       days,
       timeType: timePreset,
       customSlots: timePreset === "custom" ? scheduleRows : [],
+      startDate,
       slotDuration: Number.isFinite(slotDuration) && slotDuration > 0 ? slotDuration : 15,
       slotPrice: Number.isFinite(slotPrice) && slotPrice >= 0 ? slotPrice : 0,
     };
@@ -115,6 +124,19 @@ export default function SlotForm({ value, onChange, onsubmit }: Props) {
             <Text className="text-sm text-slate-500">
               Configure available days, timing, and fees in one place.
             </Text>
+          </div>
+
+          <div className="rounded-2xl border border-slate-200 p-4 md:p-5">
+            <Text className="mb-3 text-sm font-medium text-slate-700">
+              Start date
+            </Text>
+            <input
+              type="date"
+              value={startDate}
+              min={toLocalIsoDate(new Date())}
+              onChange={(e) => setStartDate(e.target.value)}
+              className="w-full max-w-xs rounded-lg border border-slate-300 px-3 py-2 outline-none focus:border-cyan-500"
+            />
           </div>
 
           <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4 md:p-5">

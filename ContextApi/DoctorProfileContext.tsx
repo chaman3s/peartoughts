@@ -27,6 +27,8 @@ export type DoctorHeaderData = {
   doctorEmail: string;
   doctorPhone: number;
   doctorImage: string;
+  doctorSignature: string;
+  doctorStamp: string;
   appointmentDate:[];
   appointmentTime: [];
   stats: DoctorStat[];
@@ -41,6 +43,8 @@ const defaultDoctor: DoctorHeaderData = {
   doctorEmail: "dr.evelyn.reed@example.com",
   doctorPhone: 1234567890,
   doctorImage: "https://via.placeholder.com/150",
+  doctorSignature: "",
+  doctorStamp: "",
   appointmentDate: [],
   appointmentTime: [],
   stats: [

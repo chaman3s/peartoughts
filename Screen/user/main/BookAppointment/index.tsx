@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import Button from "@/Components/ui/Button";
 import DoctorHeader from "../DoctorHeader";
 import { useDoctor } from "@/ContextApi/doctorContext";
@@ -93,6 +93,13 @@ function toLocalIsoDate(date: Date) {
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const day = String(date.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
+}
+
+function isBeforeIsoDate(value: string, minValue: string) {
+  const valueTime = new Date(`${value}T00:00:00`).getTime();
+  const minTime = new Date(`${minValue}T00:00:00`).getTime();
+  if (Number.isNaN(valueTime) || Number.isNaN(minTime)) return false;
+  return valueTime < minTime;
 }
 
 function toMinutes(value: string) {
@@ -262,11 +269,22 @@ export default function BookAppointment() {
 
     return candidates[0] ?? null;
   }, [doctorData, doctor.doctorName, doctor.specialist]);
+  const earliestBookableDate = useMemo(() => {
+    if (!persistedSlotSetting?.startDate) return todayIso;
+    const startDate = persistedSlotSetting.startDate;
+    const parsed = new Date(`${startDate}T00:00:00`).getTime();
+    if (Number.isNaN(parsed)) return todayIso;
+    return isBeforeIsoDate(startDate, todayIso) ? todayIso : startDate;
+  }, [persistedSlotSetting?.startDate, todayIso]);
+  const isBeforeStartDate = useMemo(() => {
+    if (!persistedSlotSetting) return false;
+    return isBeforeIsoDate(selectedDay, earliestBookableDate);
+  }, [persistedSlotSetting, selectedDay, earliestBookableDate]);
   const usePersistedSlots = Boolean(persistedSlotSetting);
   const isConfiguredDay = useMemo(() => {
-    if (!persistedSlotSetting) return true;
+    if (!persistedSlotSetting || isBeforeStartDate) return false;
     return persistedSlotSetting.days.map(normalizeDayToken).includes(selectedDayKey);
-  }, [persistedSlotSetting, selectedDayKey]);
+  }, [persistedSlotSetting, selectedDayKey, isBeforeStartDate]);
   const derivedSlots = useMemo<TimeSlot[]>(() => {
     if (!persistedSlotSetting || !selectedDayKey || !isConfiguredDay) return [];
 
@@ -288,6 +306,13 @@ export default function BookAppointment() {
   const selectedSlot = allSlots.find((slot) => slot.id === selectedSlotId) ?? null;
   const selectedSlotLabel = selectedSlot?.label ?? "Not selected";
   const isTodaySelected = selectedDay === todayIso;
+  useEffect(() => {
+    if (!usePersistedSlots) return;
+    if (!isBeforeIsoDate(selectedDay, earliestBookableDate)) return;
+    setSelectedDay(earliestBookableDate);
+    setCalendarDate(earliestBookableDate);
+    setSelectedSlotId(null);
+  }, [usePersistedSlots, selectedDay, earliestBookableDate]);
   const daySlots = useMemo<DaySlot[]>(() => {
     const base = new Date(`${calendarDate}T00:00:00`);
     if (Number.isNaN(base.getTime())) return [];
@@ -364,6 +389,10 @@ export default function BookAppointment() {
       setCalendarError("You can select only today or a future date.");
       return;
     }
+    if (isBeforeIsoDate(calendarDate, earliestBookableDate)) {
+      setCalendarError(`Slots start from ${earliestBookableDate}.`);
+      return;
+    }
 
     setCalendarError("");
     setSelectedDay(calendarDate);
@@ -374,6 +403,10 @@ export default function BookAppointment() {
     if (!selectedSlot) return;
     if (isPastDate(selectedDay)) {
       setCalendarError("Past dates are not allowed.");
+      return;
+    }
+    if (isBeforeIsoDate(selectedDay, earliestBookableDate)) {
+      setCalendarError(`Slots start from ${earliestBookableDate}.`);
       return;
     }
 
@@ -465,20 +498,22 @@ export default function BookAppointment() {
             {daySlots.map((slot) => {
               const isActive = selectedDay === slot.id;
               const isPast = isPastDate(slot.id);
+              const isBeforeConfiguredStart = usePersistedSlots && isBeforeIsoDate(slot.id, earliestBookableDate);
+              const isDisabledDate = isPast || isBeforeConfiguredStart;
               return (
                 <button
                   key={slot.id}
                   type="button"
                   onClick={() => {
-                    if (isPast) return;
+                    if (isDisabledDate) return;
                     setSelectedDay(slot.id);
                     setCalendarDate(slot.id);
                   }}
-                  disabled={isPast}
+                  disabled={isDisabledDate}
                   className={`rounded-2xl border px-3 py-3 text-center transition ${
                     isActive
                       ? "border-cyan-500 bg-cyan-500 text-white"
-                      : isPast
+                      : isDisabledDate
                       ? "cursor-not-allowed border-slate-200 bg-slate-50 text-slate-300"
                       : "border-slate-200 bg-white text-slate-500 hover:border-slate-300"
                   }`}
@@ -555,7 +590,12 @@ export default function BookAppointment() {
             })}
           </div>
 
-          {usePersistedSlots && !isConfiguredDay && (
+          {usePersistedSlots && isBeforeStartDate && (
+            <p className="mt-4 text-sm font-medium text-rose-600">
+              Slots start from {earliestBookableDate}.
+            </p>
+          )}
+          {usePersistedSlots && !isBeforeStartDate && !isConfiguredDay && (
             <p className="mt-4 text-sm font-medium text-rose-600">
               No slots available for this day.
             </p>
@@ -593,12 +633,16 @@ export default function BookAppointment() {
                 ref={dateInputRef}
                 type="date"
                 value={calendarDate}
-                min={todayIso}
+                min={earliestBookableDate}
                 onChange={(event) => {
                   const nextValue = event.target.value;
                   setCalendarDate(nextValue);
                   if (isPastDate(nextValue)) {
                     setCalendarError("You can select only today or a future date.");
+                    return;
+                  }
+                  if (isBeforeIsoDate(nextValue, earliestBookableDate)) {
+                    setCalendarError(`Slots start from ${earliestBookableDate}.`);
                     return;
                   }
                   setCalendarError("");

@@ -14,6 +14,8 @@ import { CalendarDays, Clock3, IndianRupee, Stethoscope } from "lucide-react";
 type DashboardDoctor = {
   id: string;
   doctorImage: string;
+  doctorSignature?: string;
+  doctorStamp?: string;
   name: string;
   specialty: string;
   experience: string;
@@ -97,6 +99,20 @@ function normalizeKey(value: string | undefined) {
   return (value ?? "").trim().toLowerCase();
 }
 
+function toLocalIsoDate(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function formatDateLabel(value?: string) {
+  if (!value) return "Not set";
+  const parsed = new Date(`${value}T00:00:00`);
+  if (Number.isNaN(parsed.getTime())) return "Not set";
+  return new Intl.DateTimeFormat("en-US", { month: "short", day: "2-digit", year: "numeric" }).format(parsed);
+}
+
 function normalizeSlotSetting(setting: SlotSettings): PersistedSlotSettings {
   const normalizeDayToken = (token: string) => dayTokenMap[token.trim().toLowerCase()] ?? token.trim().toLowerCase();
   const normalizeDayList = (tokens: string[]) =>
@@ -111,6 +127,7 @@ function normalizeSlotSetting(setting: SlotSettings): PersistedSlotSettings {
           days: normalizeDayList(group.days ?? []),
         }))
       : [],
+    startDate: typeof setting.startDate === "string" ? setting.startDate : toLocalIsoDate(new Date()),
     note: setting.note ?? "",
     slotDuration: Number.isFinite(setting.slotDuration) && setting.slotDuration > 0 ? setting.slotDuration : 15,
     slotPrice: Number.isFinite(setting.slotPrice) && setting.slotPrice >= 0 ? setting.slotPrice : 0,
@@ -121,6 +138,8 @@ function normalizeSlotSetting(setting: SlotSettings): PersistedSlotSettings {
 function syncDoctorDataToLocalStorage(doctor: {
   doctorName: string;
   doctorImage: string;
+  doctorSignature?: string;
+  doctorStamp?: string;
   specialist: string;
   status: string;
   doctorEmail: string;
@@ -156,6 +175,8 @@ function syncDoctorDataToLocalStorage(doctor: {
   const nextDoctor: DashboardDoctor = {
     id: existing?.id || `doc-${doctorList.length + 1}`,
     doctorImage: doctor.doctorImage,
+    doctorSignature: doctor.doctorSignature || existing?.doctorSignature,
+    doctorStamp: doctor.doctorStamp || existing?.doctorStamp,
     name: doctor.doctorName,
     specialty: doctor.specialist,
     experience: normalizeExperience(getStatValue(doctor.stats, "experience")),
@@ -210,6 +231,7 @@ export default function DoctorProfile() {
     days: ["mon", "tue", "wed", "thu", "fri"],
     timeType: "custom",
     customSlots: [],
+    startDate: toLocalIsoDate(new Date()),
     note: "",
     slotDuration: 15,
     slotPrice: 0,
@@ -252,6 +274,8 @@ export default function DoctorProfile() {
               const nextDoctorData = {
                 doctorName: updates.doctorName ?? doctor.doctorName,
                 doctorImage: updates.doctorImage ?? doctor.doctorImage,
+                doctorSignature: updates.doctorSignature ?? doctor.doctorSignature,
+                doctorStamp: updates.doctorStamp ?? doctor.doctorStamp,
                 specialist: updates.specialist ?? doctor.specialist,
                 status: updates.status ?? doctor.status,
                 doctorEmail: updates.doctorEmail ?? doctor.doctorEmail,
@@ -270,6 +294,8 @@ export default function DoctorProfile() {
             doctorDegree={doctor.doctorDegree || "not defined"}
             clinicLocation={doctor.clinicLocation || "not defined"}
             doctorImage={doctor.doctorImage}
+            doctorSignature={doctor.doctorSignature}
+            doctorStamp={doctor.doctorStamp}
             stats={doctor.stats || []}
           />
         )}
@@ -290,6 +316,8 @@ export default function DoctorProfile() {
                 {
                   doctorName: doctor.doctorName,
                   doctorImage: doctor.doctorImage,
+                  doctorSignature: doctor.doctorSignature,
+                  doctorStamp: doctor.doctorStamp,
                   specialist: doctor.specialist,
                   status: doctor.status,
                   doctorEmail: doctor.doctorEmail,
@@ -320,7 +348,7 @@ export default function DoctorProfile() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-4">
                   <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
                     <div className="mb-2 flex items-center gap-2 text-slate-500">
                       <CalendarDays className="h-4 w-4" />
@@ -348,6 +376,16 @@ export default function DoctorProfile() {
                     </div>
                     <Text className="text-lg font-semibold text-slate-900">
                       {slotSetting.slotPrice}
+                    </Text>
+                  </div>
+
+                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                    <div className="mb-2 flex items-center gap-2 text-slate-500">
+                      <CalendarDays className="h-4 w-4" />
+                      <Text className="text-xs font-medium uppercase tracking-wide">Start Date</Text>
+                    </div>
+                    <Text className="text-lg font-semibold text-slate-900">
+                      {formatDateLabel(slotSetting.startDate)}
                     </Text>
                   </div>
                 </div>
@@ -465,6 +503,4 @@ export default function DoctorProfile() {
     </div>
   );
 }
-
-
 

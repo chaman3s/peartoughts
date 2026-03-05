@@ -16,6 +16,7 @@ export type PersistedSlotSettings = {
   days: string[];
   timeType: SlotTimeType;
   customSlots: SlotCustomGroup[];
+  startDate?: string;
   note: string;
   slotDuration: number;
   slotPrice: number;

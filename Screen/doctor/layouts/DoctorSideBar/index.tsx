@@ -48,6 +48,19 @@ const menuItems: SideBarItem[] = [
     ),
   },
   {
+    id: "patient",
+    label: "Patient",
+    href: "/doctor/home/patient",
+    icon: (
+      <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden="true">
+        <path
+          d="M12 2a5 5 0 1 1 0 10 5 5 0 0 1 0-10Zm0 12c4.418 0 8 2.239 8 5v1a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-1c0-2.761 3.582-5 8-5Zm6 5c0-1.317-2.548-3-6-3s-6 1.683-6 3v1h12v-1Z"
+          fill="currentColor"
+        />
+      </svg>
+    ),
+  },
+  {
     id: "book-appointment",
     label: "Record",
     href: "/dashBoard/BookAppointment",

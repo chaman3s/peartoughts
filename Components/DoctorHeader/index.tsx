@@ -16,6 +16,8 @@ type Stat = {
 type DoctorHeaderProps = {
   status: string;
   doctorImage: string;
+  doctorSignature?: string;
+  doctorStamp?: string;
   specialist?: string;
   doctorDegree?: string;
   clinicLocation?: string;
@@ -84,6 +86,8 @@ function getFallbackStatIcon(stat: Stat) {
 export default function DoctorHeader({
   status,
   doctorImage,
+  doctorSignature = "",
+  doctorStamp = "",
   specialist = "not defined",
   doctorDegree = "not defined",
   clinicLocation = "not defined",
@@ -162,6 +166,36 @@ export default function DoctorHeader({
           </div>
         ))}
       </div>
+
+      {(doctorSignature || doctorStamp) && (
+        <div className="mt-3 ml-2.5 mr-4 grid grid-cols-1 gap-2 md:grid-cols-2">
+          {doctorSignature ? (
+            <div className="rounded-xl border border-slate-200 bg-white p-3">
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">Signature</p>
+              <Image
+                src={doctorSignature}
+                alt={`${doctorName} signature`}
+                width={160}
+                height={60}
+                className="h-14 w-auto object-contain"
+              />
+            </div>
+          ) : null}
+
+          {doctorStamp ? (
+            <div className="rounded-xl border border-slate-200 bg-white p-3">
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">Clinic Stamp</p>
+              <Image
+                src={doctorStamp}
+                alt={`${doctorName} stamp`}
+                width={160}
+                height={60}
+                className="h-14 w-auto object-contain"
+              />
+            </div>
+          ) : null}
+        </div>
+      )}
     </>
   );
 }

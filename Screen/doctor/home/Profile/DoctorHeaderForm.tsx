@@ -1,5 +1,6 @@
 "use client";
 
+import type { ChangeEvent } from "react";
 import { useMemo, useState } from "react";
 import Text from "@/Components/ui/Text";
 import { Card } from "@/Components/ui/Card";
@@ -16,6 +17,8 @@ type FieldErrors = {
   doctorName?: string;
   status?: string;
   doctorImage?: string;
+  doctorSignature?: string;
+  doctorStamp?: string;
   doctorEmail?: string;
   doctorPhone?: string;
   patientsCount?: string;
@@ -59,6 +62,21 @@ function getSavedTagsByEmail(email: string) {
   }
 }
 
+function readImageFileAsDataUrl(file: File) {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === "string") {
+        resolve(reader.result);
+      } else {
+        reject(new Error("Unable to read image file."));
+      }
+    };
+    reader.onerror = () => reject(new Error("Unable to read image file."));
+    reader.readAsDataURL(file);
+  });
+}
+
 export default function DoctorHeaderForm({ value, onSave, onCancel }: Props) {
   const existingTags = getSavedTagsByEmail(value.doctorEmail ?? "");
   const [form, setForm] = useState({
@@ -68,6 +86,8 @@ export default function DoctorHeaderForm({ value, onSave, onCancel }: Props) {
     doctorDegree: value.doctorDegree ?? "",
     clinicLocation: value.clinicLocation ?? "",
     doctorImage: value.doctorImage ?? "",
+    doctorSignature: value.doctorSignature ?? "",
+    doctorStamp: value.doctorStamp ?? "",
     doctorEmail: value.doctorEmail ?? "",
     doctorPhone: String(value.doctorPhone ?? ""),
     patientsCount: getStatValueByLabel(value.stats, /patient/i).replace(/[^\d]/g, ""),
@@ -87,6 +107,29 @@ export default function DoctorHeaderForm({ value, onSave, onCancel }: Props) {
     }
   };
 
+  const handleImageUpload = async (
+    event: ChangeEvent<HTMLInputElement>,
+    field: "doctorImage" | "doctorSignature" | "doctorStamp",
+    errorKey: "doctorImage" | "doctorSignature" | "doctorStamp"
+  ) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      setErrors((prev) => ({ ...prev, [errorKey]: "Please select an image file." }));
+      return;
+    }
+
+    try {
+      const imageDataUrl = await readImageFileAsDataUrl(file);
+      updateField(field, imageDataUrl);
+    } catch {
+      setErrors((prev) => ({ ...prev, [errorKey]: "Unable to process selected file." }));
+    } finally {
+      event.target.value = "";
+    }
+  };
+
   const validate = () => {
     const nextErrors: FieldErrors = {};
 
@@ -102,6 +145,14 @@ export default function DoctorHeaderForm({ value, onSave, onCancel }: Props) {
       nextErrors.doctorImage = "Doctor image URL is required.";
     } else if (!isValidUrl(form.doctorImage.trim())) {
       nextErrors.doctorImage = "Enter a valid image URL.";
+    }
+
+    if (form.doctorSignature.trim() && !isValidUrl(form.doctorSignature.trim())) {
+      nextErrors.doctorSignature = "Enter a valid signature image URL.";
+    }
+
+    if (form.doctorStamp.trim() && !isValidUrl(form.doctorStamp.trim())) {
+      nextErrors.doctorStamp = "Enter a valid stamp image URL.";
     }
 
     if (form.doctorEmail.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.doctorEmail.trim())) {
@@ -161,6 +212,8 @@ export default function DoctorHeaderForm({ value, onSave, onCancel }: Props) {
       doctorDegree: form.doctorDegree.trim(),
       clinicLocation: form.clinicLocation.trim(),
       doctorImage: form.doctorImage.trim(),
+      doctorSignature: form.doctorSignature.trim(),
+      doctorStamp: form.doctorStamp.trim(),
       doctorEmail: form.doctorEmail.trim(),
       doctorPhone: form.doctorPhone.trim() ? Number(form.doctorPhone.trim()) : 0,
       stats: nextStats,
@@ -247,7 +300,49 @@ export default function DoctorHeaderForm({ value, onSave, onCancel }: Props) {
                 className="w-full rounded-md border border-slate-300 px-3 py-2 outline-none focus:border-blue-500"
                 placeholder="https://example.com/image.jpg"
               />
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => handleImageUpload(e, "doctorImage", "doctorImage")}
+                className="w-full text-sm text-slate-600 file:mr-3 file:rounded-md file:border file:border-slate-300 file:bg-slate-50 file:px-3 file:py-1.5 file:text-sm file:text-slate-700 hover:file:bg-slate-100"
+              />
               {errors.doctorImage && <Text className="text-xs text-red-600">{errors.doctorImage}</Text>}
+            </label>
+
+            <label className="space-y-1">
+              <Text className="text-sm text-slate-600">Signature Image URL</Text>
+              <input
+                type="url"
+                value={form.doctorSignature}
+                onChange={(e) => updateField("doctorSignature", e.target.value)}
+                className="w-full rounded-md border border-slate-300 px-3 py-2 outline-none focus:border-blue-500"
+                placeholder="https://example.com/signature.png"
+              />
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => handleImageUpload(e, "doctorSignature", "doctorSignature")}
+                className="w-full text-sm text-slate-600 file:mr-3 file:rounded-md file:border file:border-slate-300 file:bg-slate-50 file:px-3 file:py-1.5 file:text-sm file:text-slate-700 hover:file:bg-slate-100"
+              />
+              {errors.doctorSignature && <Text className="text-xs text-red-600">{errors.doctorSignature}</Text>}
+            </label>
+
+            <label className="space-y-1">
+              <Text className="text-sm text-slate-600">Clinic Stamp Image URL</Text>
+              <input
+                type="url"
+                value={form.doctorStamp}
+                onChange={(e) => updateField("doctorStamp", e.target.value)}
+                className="w-full rounded-md border border-slate-300 px-3 py-2 outline-none focus:border-blue-500"
+                placeholder="https://example.com/stamp.png"
+              />
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => handleImageUpload(e, "doctorStamp", "doctorStamp")}
+                className="w-full text-sm text-slate-600 file:mr-3 file:rounded-md file:border file:border-slate-300 file:bg-slate-50 file:px-3 file:py-1.5 file:text-sm file:text-slate-700 hover:file:bg-slate-100"
+              />
+              {errors.doctorStamp && <Text className="text-xs text-red-600">{errors.doctorStamp}</Text>}
             </label>
 
             <label className="space-y-1">
