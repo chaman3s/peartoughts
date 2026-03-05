@@ -28,8 +28,14 @@ type FieldErrors = {
 const STATUS_OPTIONS = ["online", "offline", "busy", "on leave"];
 
 function isValidUrl(value: string) {
+  const normalized = value.trim();
+  if (!normalized) return false;
+
+  const isDataImageUrl = /^data:image\/[a-zA-Z0-9.+-]+;base64,/i.test(normalized);
+  if (isDataImageUrl) return true;
+
   try {
-    const parsed = new URL(value);
+    const parsed = new URL(normalized);
     return parsed.protocol === "http:" || parsed.protocol === "https:";
   } catch {
     return false;
