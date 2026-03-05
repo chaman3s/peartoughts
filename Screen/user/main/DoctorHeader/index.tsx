@@ -3,11 +3,14 @@ import React from "react";
 type DoctorHeaderProps = {
   status: string;
   doctorImage: string;
-  specialist:string;
-  doctorDegree:string;
-  clinicLocation:string;
-  doctorName:string;
-    stats: Stat[]; 
+  specialist: string;
+  doctorDegree: string;
+  clinicName?: string;
+  clinicLocation: string;
+  clinicAddress?: string;
+  doctorLicenseNo?: string;
+  doctorName: string;
+  stats: Stat[];
 
 };
 type Stat = {
@@ -28,7 +31,18 @@ function formatAppointmentModeLabel(status: string) {
   const readable = normalized.charAt(0).toUpperCase() + normalized.slice(1);
   return `${readable} (Appointment Mode)`;
 }
-export default function DoctorHeader({status,doctorImage,specialist,doctorDegree,clinicLocation,doctorName,stats}:DoctorHeaderProps) {
+export default function DoctorHeader({
+  status,
+  doctorImage,
+  specialist,
+  doctorDegree,
+  clinicName = "",
+  clinicLocation,
+  clinicAddress = "",
+  doctorLicenseNo = "",
+  doctorName,
+  stats,
+}: DoctorHeaderProps) {
     return(
       <>
         <div className="relative overflow-hidden rounded-3xl border border-blue-100 bg-white p-5 shadow-[0_16px_50px_-24px_rgba(37,99,235,0.45)] md:p-6">
@@ -43,7 +57,9 @@ export default function DoctorHeader({status,doctorImage,specialist,doctorDegree
               <h2 className="mt-3 text-3xl font-semibold leading-tight text-slate-900 md:text-4xl">{doctorName}</h2>
               <p className="mt-1 text-base font-medium text-sky-600">{specialist}</p>
               <p className="mt-3 text-sm font-semibold text-blue-600">{doctorDegree}</p>
-              <p className="mt-1 text-sm text-slate-500">Fellow of {clinicLocation}</p>
+              {clinicName ? <p className="mt-1 text-sm text-slate-500">Clinic: {clinicName}</p> : null}
+              {clinicAddress ? <p className="mt-1 text-sm text-slate-500">Address: {clinicAddress}</p> : null}
+              {doctorLicenseNo ? <p className="mt-1 text-sm text-slate-500">License No: {doctorLicenseNo}</p> : null}
             </div>
             <div className="overflow-hidden rounded-2xl border border-slate-200 bg-slate-100 shadow-sm">
               <Image src={doctorImage} alt="Dr. Kumar Das" width={96} height={96} className="h-24 w-24 object-cover" />

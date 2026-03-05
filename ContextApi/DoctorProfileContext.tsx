@@ -23,7 +23,10 @@ export type DoctorHeaderData = {
   doctorName: string;
   specialist: string;
   doctorDegree: string;
+  clinicName: string;
   clinicLocation: string;
+  clinicAddress: string;
+  doctorLicenseNo: string;
   doctorEmail: string;
   doctorPhone: number;
   doctorImage: string;
@@ -39,7 +42,10 @@ const defaultDoctor: DoctorHeaderData = {
   doctorName: "Dr. Evelyn Reed",
   specialist: "Pediatrician",
   doctorDegree: "M.D., F.A.A.P.",
+  clinicName: "Wellness Pediatric Clinic",
   clinicLocation: "123 Wellness Way, Suite 101, Healtheville, ST 12345",
+  clinicAddress: "123 Wellness Way, Suite 101, Healtheville, ST 12345",
+  doctorLicenseNo: "MED-123456",
   doctorEmail: "dr.evelyn.reed@example.com",
   doctorPhone: 1234567890,
   doctorImage: "https://via.placeholder.com/150",

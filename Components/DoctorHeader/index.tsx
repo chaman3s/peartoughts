@@ -20,7 +20,10 @@ type DoctorHeaderProps = {
   doctorStamp?: string;
   specialist?: string;
   doctorDegree?: string;
+  clinicName?: string;
   clinicLocation?: string;
+  clinicAddress?: string;
+  doctorLicenseNo?: string;
   doctorName?: string;
   specialTitle?: SpecialTitle | null;
   stats?: Stat[];
@@ -103,7 +106,10 @@ export default function DoctorHeader({
   doctorStamp = "",
   specialist = "not defined",
   doctorDegree = "not defined",
+  clinicName = "not defined",
   clinicLocation = "not defined",
+  clinicAddress = "not defined",
+  doctorLicenseNo = "not defined",
   doctorName = "not defined",
   stats = [],
   specialTitle = null,
@@ -143,11 +149,9 @@ export default function DoctorHeader({
               {doctorDegree}
             </p>
 
-            {clinicLocation && (
-              <p className="mt-1 text-sm text-slate-500">
-                Fellow of {clinicLocation}
-              </p>
-            )}
+            {clinicName ? <p className="mt-1 text-sm text-slate-500">Clinic: {clinicName}</p> : null}
+            {clinicAddress ? <p className="mt-1 text-sm text-slate-500">Address: {clinicAddress}</p> : null}
+            {doctorLicenseNo ? <p className="mt-1 text-sm text-slate-500">License No: {doctorLicenseNo}</p> : null}
           </div>
 
           <div className="overflow-hidden rounded-2xl border border-slate-200 bg-slate-100 shadow-sm mt-10

@@ -479,6 +479,8 @@ export default function PrescriptionPage() {
       "Qualification"
       )
     );
+    const prescriptionNumber = String(Math.floor(100000 + Math.random() * 900000));
+    const doctorRegistrationNumber = doctor.doctorLicenseNo?.trim() || "N/A";
 
     const html = `
       <!doctype html>
@@ -486,7 +488,7 @@ export default function PrescriptionPage() {
         <head>
           <meta charset="utf-8" />
           <meta name="viewport" content="width=device-width, initial-scale=1" />
-          <title>Prescription</title>
+          <title>Prescription #${escapeHtml(prescriptionNumber)}</title>
           <style>
             * { box-sizing: border-box; }
             body { font-family: "Segoe UI", Arial, sans-serif; margin: 0; padding: 36px; color: #0f172a; background: #3e79b9; }
@@ -513,7 +515,7 @@ export default function PrescriptionPage() {
             .doctor-name { margin: 0; font-size: 48px; font-weight: 700; line-height: 1.08; color: #2f69ad; max-width: 560px; word-break: break-word; }
             .qualification { margin-top: 8px; font-size: 17px; letter-spacing: 0.01em; color: #1f3b56; text-transform: none; }
             .certificate { margin-top: 34px; font-size: 12px; color: #64748b; }
-            .symbol-top { font-size: 94px; line-height: 1; color: #2f69ad; margin-top: 6px; margin-right: 6px; }
+            .symbol-top { font-size: 94px; line-height: 1; color: #2f69ad; margin-top: 2px; margin-right: 6px; }
             .patient-info { padding: 0 40px; margin-top: 6px; }
             .line-field {
               margin: 8px 0;
@@ -607,7 +609,7 @@ export default function PrescriptionPage() {
               <div class="header-left">
                 <h1 class="doctor-name">${escapeHtml(doctorDisplayName)}</h1>
                 <p class="qualification">${escapeHtml(qualificationDisplay)}</p>
-                <p class="certificate">Certification ${escapeHtml(latestPrescription.id)}</p>
+                <p class="certificate">Doctor Registration No: ${escapeHtml(doctorRegistrationNumber)}</p>
               </div>
               <div class="symbol-top">⚕</div>
             </div>
@@ -712,7 +714,7 @@ export default function PrescriptionPage() {
       printWindow.print();
       printWindow.close();
     }, 350);
-  }, [doctor.doctorDegree, latestPrescription, patientAddress, patientAge, prescriptionDoctor]);
+  }, [doctor.doctorDegree, doctor.doctorLicenseNo, latestPrescription, patientAddress, patientAge, prescriptionDoctor]);
 
   return (
     <main className="min-h-screen bg-slate-100 p-4 md:p-6">

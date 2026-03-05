@@ -90,7 +90,10 @@ export default function DoctorHeaderForm({ value, onSave, onCancel }: Props) {
     doctorName: value.doctorName ?? "",
     specialist: value.specialist ?? "",
     doctorDegree: value.doctorDegree ?? "",
+    clinicName: value.clinicName ?? "",
     clinicLocation: value.clinicLocation ?? "",
+    clinicAddress: value.clinicAddress ?? "",
+    doctorLicenseNo: value.doctorLicenseNo ?? "",
     doctorImage: value.doctorImage ?? "",
     doctorSignature: value.doctorSignature ?? "",
     doctorStamp: value.doctorStamp ?? "",
@@ -216,7 +219,10 @@ export default function DoctorHeaderForm({ value, onSave, onCancel }: Props) {
       doctorName: form.doctorName.trim(),
       specialist: form.specialist.trim(),
       doctorDegree: form.doctorDegree.trim(),
+      clinicName: form.clinicName.trim(),
       clinicLocation: form.clinicLocation.trim(),
+      clinicAddress: form.clinicAddress.trim(),
+      doctorLicenseNo: form.doctorLicenseNo.trim(),
       doctorImage: form.doctorImage.trim(),
       doctorSignature: form.doctorSignature.trim(),
       doctorStamp: form.doctorStamp.trim(),
@@ -276,6 +282,17 @@ export default function DoctorHeaderForm({ value, onSave, onCancel }: Props) {
             </label>
 
             <label className="space-y-1">
+              <Text className="text-sm text-slate-600">Clinic Name</Text>
+              <input
+                type="text"
+                value={form.clinicName}
+                onChange={(e) => updateField("clinicName", e.target.value)}
+                className="w-full rounded-md border border-slate-300 px-3 py-2 outline-none focus:border-blue-500"
+                placeholder="City Care Clinic"
+              />
+            </label>
+
+            <label className="space-y-1">
               <Text className="text-sm text-slate-600">Doctor Degree</Text>
               <input
                 type="text"
@@ -287,13 +304,24 @@ export default function DoctorHeaderForm({ value, onSave, onCancel }: Props) {
             </label>
 
             <label className="space-y-1 md:col-span-2">
-              <Text className="text-sm text-slate-600">Clinic Location</Text>
+              <Text className="text-sm text-slate-600">Clinic Address</Text>
               <input
                 type="text"
-                value={form.clinicLocation}
-                onChange={(e) => updateField("clinicLocation", e.target.value)}
+                value={form.clinicAddress}
+                onChange={(e) => updateField("clinicAddress", e.target.value)}
                 className="w-full rounded-md border border-slate-300 px-3 py-2 outline-none focus:border-blue-500"
-                placeholder="City Hospital, Mumbai"
+                placeholder="12 Medical Road, Nungambakkam, Chennai"
+              />
+            </label>
+
+            <label className="space-y-1 md:col-span-2">
+              <Text className="text-sm text-slate-600">Doctor License No</Text>
+              <input
+                type="text"
+                value={form.doctorLicenseNo}
+                onChange={(e) => updateField("doctorLicenseNo", e.target.value)}
+                className="w-full rounded-md border border-slate-300 px-3 py-2 outline-none focus:border-blue-500"
+                placeholder="e.g. TN-MCI-009874"
               />
             </label>
 

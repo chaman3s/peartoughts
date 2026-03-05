@@ -23,7 +23,10 @@ export type DoctorHeaderData = {
   doctorName: string;
   specialist: string;
   doctorDegree: string;
+  clinicName: string;
   clinicLocation: string;
+  clinicAddress: string;
+  doctorLicenseNo: string;
   doctorImage: string;
   appointmentDate: string;
   appointmentTime: string;

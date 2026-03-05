@@ -18,6 +18,10 @@ type DashboardDoctor = {
   doctorStamp?: string;
   name: string;
   specialty: string;
+  clinicName?: string;
+  clinicLocation?: string;
+  clinicAddress?: string;
+  doctorLicenseNo?: string;
   experience: string;
   rating: string;
   description: string;
@@ -141,6 +145,10 @@ function syncDoctorDataToLocalStorage(doctor: {
   doctorSignature?: string;
   doctorStamp?: string;
   specialist: string;
+  clinicName?: string;
+  clinicLocation?: string;
+  clinicAddress?: string;
+  doctorLicenseNo?: string;
   status: string;
   doctorEmail: string;
   stats: { label: string; value: string }[];
@@ -179,6 +187,10 @@ function syncDoctorDataToLocalStorage(doctor: {
     doctorStamp: doctor.doctorStamp || existing?.doctorStamp,
     name: doctor.doctorName,
     specialty: doctor.specialist,
+    clinicName: doctor.clinicName || existing?.clinicName || "",
+    clinicLocation: doctor.clinicLocation || existing?.clinicLocation || "",
+    clinicAddress: doctor.clinicAddress || existing?.clinicAddress || "",
+    doctorLicenseNo: doctor.doctorLicenseNo || existing?.doctorLicenseNo || "",
     experience: normalizeExperience(getStatValue(doctor.stats, "experience")),
     rating: normalizeRating(getStatValue(doctor.stats, "rating")),
     description: existing?.description || `Specialist in ${doctor.specialist || "general care"}.`,
@@ -277,6 +289,10 @@ export default function DoctorProfile() {
                 doctorSignature: updates.doctorSignature ?? doctor.doctorSignature,
                 doctorStamp: updates.doctorStamp ?? doctor.doctorStamp,
                 specialist: updates.specialist ?? doctor.specialist,
+                clinicName: updates.clinicName ?? doctor.clinicName,
+                clinicLocation: updates.clinicLocation ?? doctor.clinicLocation,
+                clinicAddress: updates.clinicAddress ?? doctor.clinicAddress,
+                doctorLicenseNo: updates.doctorLicenseNo ?? doctor.doctorLicenseNo,
                 status: updates.status ?? doctor.status,
                 doctorEmail: updates.doctorEmail ?? doctor.doctorEmail,
                 stats: updates.stats ?? doctor.stats,
@@ -292,7 +308,10 @@ export default function DoctorProfile() {
             doctorName={doctor.doctorName}
             specialist={doctor.specialist || "not defined"}
             doctorDegree={doctor.doctorDegree || "not defined"}
+            clinicName={doctor.clinicName || "not defined"}
             clinicLocation={doctor.clinicLocation || "not defined"}
+            clinicAddress={doctor.clinicAddress || "not defined"}
+            doctorLicenseNo={doctor.doctorLicenseNo || "not defined"}
             doctorImage={doctor.doctorImage}
             doctorSignature={doctor.doctorSignature}
             doctorStamp={doctor.doctorStamp}
@@ -319,6 +338,10 @@ export default function DoctorProfile() {
                   doctorSignature: doctor.doctorSignature,
                   doctorStamp: doctor.doctorStamp,
                   specialist: doctor.specialist,
+                  clinicName: doctor.clinicName,
+                  clinicLocation: doctor.clinicLocation,
+                  clinicAddress: doctor.clinicAddress,
+                  doctorLicenseNo: doctor.doctorLicenseNo,
                   status: doctor.status,
                   doctorEmail: doctor.doctorEmail,
                   stats: doctor.stats,
@@ -503,4 +526,3 @@ export default function DoctorProfile() {
     </div>
   );
 }
-

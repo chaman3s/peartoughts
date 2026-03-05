@@ -467,7 +467,10 @@ export default function BookAppointment() {
           doctorName={doctor.doctorName}
           specialist={doctor.specialist}
           doctorDegree={doctor.doctorDegree}
+          clinicName={doctor.clinicName}
           clinicLocation={doctor.clinicLocation}
+          clinicAddress={doctor.clinicAddress}
+          doctorLicenseNo={doctor.doctorLicenseNo}
           doctorImage={doctor.doctorImage}
           stats={doctor.stats}
         />
