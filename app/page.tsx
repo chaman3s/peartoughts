@@ -32,22 +32,22 @@ export default function LadingPage() {
             user-friendly platform.
           </p>
           <div className="flex flex-wrap gap-4">
-            <button className="flex items-center justify-between gap-6 bg-emerald-600 text-white px-6 py-5 rounded-2xl min-w-[260px] shadow-lg hover:shadow-xl transition">
+            <button className="flex items-center justify-between gap-6 bg-emerald-600 text-white px-6 py-5 rounded-2xl min-w-[260px] shadow-lg hover:shadow-xl transition" onClick={()=>navigate("/login")} >
               <div className="flex items-center gap-3">
                 <User />
-                <div className="text-left">
-                  <p className="text-sm opacity-90"  onClick={()=>navigate("/login")}>Patient Portal</p>
-                  <p className="font-semibold text-lg" onClick={()=>navigate("/login")}>Login as User</p>
+                <div className="text-left" >
+                  <p className="text-sm opacity-90"  >Patient Portal</p>
+                  <p className="font-semibold text-lg">Login as User</p>
                 </div>
               </div>
               <span className="text-xl">→</span>
             </button>
-            <button className="flex items-center justify-between gap-6 bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-6 py-5 rounded-2xl min-w-[260px] shadow-lg hover:shadow-xl transition">
+            <button className="flex items-center justify-between gap-6 bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-6 py-5 rounded-2xl min-w-[260px] shadow-lg hover:shadow-xl transition" onClick={()=>navigate("/doctor/login")}>
               <div className="flex items-center gap-3">
                 <Stethoscope />
-                <div className="text-left">
+                <div className="text-left" >
                   <p className="text-sm opacity-90">Medical Portal</p>
-                  <p className="font-semibold text-lg" onClick={()=>navigate("/doctor/login")}>Login as Doctor</p>
+                  <p className="font-semibold text-lg" >Login as Doctor</p>
                 </div>
               </div>
               <span className="text-xl">→</span>

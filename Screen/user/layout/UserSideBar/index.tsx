@@ -11,7 +11,7 @@ const menuItems: SideBarItem[] = [
   {
     id: "dashboard",
     label: "Dashboard",
-    href: "/home/dashboard",
+    href: "/home/dashBoard",
     icon: (
       <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden="true">
         <path
@@ -38,7 +38,7 @@ const menuItems: SideBarItem[] = [
   {
     id: "book-appointment",
     label: "Record",
-    href: "/dashBoard/BookAppointment",
+    href: "/home/prescription",
     icon: (
       <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden="true">
         <path
