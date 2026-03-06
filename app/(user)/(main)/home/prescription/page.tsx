@@ -35,7 +35,7 @@ type PrescriptionStorageItem = {
   patientName?: string;
   patientEmail?: string;
   followUpDays?: number;
-  diagnosis: string
+  diagnosis?: string
   notes?: string;
   medicines: PrescriptionMedicine[];
 };
@@ -172,7 +172,7 @@ function toPrescriptionStorageItem(value: unknown, index: number): PrescriptionS
     ? value.patientEmail.trim().toLowerCase()
     : undefined;
   const notes = typeof value.notes === "string" && value.notes.trim() ? value.notes.trim() : undefined;
-  const diagnosis = typeof value.diagnosis === "string" && value.diagnosis.trim() ? value.diagnosis.trim() : undefined;
+  const diagnosis = typeof value.diagnosis === "string" && value.diagnosis.trim() ? value.diagnosis.trim() :"";
 
   return {
     id,
