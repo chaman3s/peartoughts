@@ -604,8 +604,8 @@ export default function PrescriptionPage() {
               font-weight: 700;
               color: #225da1;
             }
-            .medicine-list { margin-top: 10px; padding-left: 8px; max-width: 94%; }
-            .medicine-item { display: flex; align-items: flex-start; gap: 8px; margin: 9px 0; margin-top: 30px;}
+            .medicine-list { margin-top: 20px; padding-left: 8px; max-width: 94%;  margin-bottom:10px}
+            .medicine-item { display: flex; align-items: flex-start; gap: 8px; margin: 9px 0; margin-top: 10px;}
             .advice-item { display: flex; align-items: flex-start; gap: 8px; margin: 9px 0;margin-left:30px }
             .medicine-index { width: 20px; font-size: 13px; color: #1e3a58; font-weight: 600; margin-left: 30px;}
             .medicine-content { flex: 1; }
@@ -699,6 +699,7 @@ export default function PrescriptionPage() {
               <div class="watermark">⚕</div>
               <p class="rx-text"><span class="rx-top">R</span><span class="rx-bottom">x</span></p>
               <div class="medicine-list">
+              prescription medicine
                 ${medicinesHtml}
                 Advice 
                  ${adviceHtml}
@@ -788,8 +789,8 @@ export default function PrescriptionPage() {
   ]);
 
   return (
-    <main className="min-h-full bg-slate-100 p-4 md:p-6 scrollbar-hide">
-      <section className="mx-auto max-w-5xl space-y-4 rounded-2xl border border-slate-200 bg-white p-6">
+    <main className="bg-slate-100 scrollbar-hide">
+      <section className="space-y-4 rounded-2xl border border-slate-200 bg-white p-6">
         <header className="flex flex-col gap-4 border-b border-slate-200 pb-5 md:flex-row md:items-start md:justify-between">
           <div>
             <h1 className="text-2xl font-semibold text-slate-900">Prescription</h1>
