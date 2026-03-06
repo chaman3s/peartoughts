@@ -258,7 +258,7 @@ export default function DoctorDashboard() {
 
        
 
-        <div className="grid gap-4 lg:grid-cols-3">
+        <div className="grid gap-4 lg:grid-cols-3 hidden">
           <Card className="rounded-2xl border border-slate-200/80 bg-white/95 p-5 lg:col-span-2">
             <div className="flex items-center justify-between gap-2">
               <h2 className="text-lg font-semibold text-slate-900">Upcoming Appointments</h2>
