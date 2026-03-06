@@ -505,7 +505,7 @@ export default function PrescriptionPage() {
       const adviceHtml =  `
         <div class="advice-item">
           <div class="medicine-content">
-            <p class="medicine-name">${escapeHtml(latestPrescription.notes)}</p>
+            <p class="medicine-name">${escapeHtml(latestPrescription.notes??"")}</p>
           </div>
         </div>
       `;
