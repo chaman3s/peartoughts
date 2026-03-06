@@ -16,7 +16,7 @@ export default function authNavBar() {
             className="rounded-full object-cover"
           />
           <p className="text-lg font-semibold tracking-tight text-black">
-            DoctorTube
+            DoctorCare
           </p>
         </div>
       </div>

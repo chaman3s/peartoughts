@@ -5,6 +5,7 @@ import { Card } from "@/Components/ui/Card";
 import Button from "@/Components/ui/Button";
 import Image from "@/Components/ui/Image";
 import { useDoctor } from "@/ContextApi/doctorContext";
+import { useDoctors } from "@/hooks/useDoctors";
 
 type DoctorCard = {
   id: string;
@@ -29,173 +30,12 @@ const filterTags = [
   "Available Today",
 ] as const;
 
-const defaultDoctors: DoctorCard[] = [
-  {
-    id: "doc-1",
-    doctorImage:"https://images.pexels.com/photos/4173251/pexels-photo-4173251.jpeg",
-    name: "Dr. Amelia Clark",
-    specialty: "Cardiologist",
-    experience: "12 years",
-    rating: "4.9",
-    description: "Specialist in heart rhythm disorders and preventive cardiac care.",
-    tags: ["Heart Care", "Online", "Top Rated"],
-    availableToday: true,
-  },
-  {
-    id: "doc-2",
-    doctorImage:"https://images.pexels.com/photos/4173251/pexels-photo-4173251.jpeg",
-    name: "Dr. Noah Rivera",
-    specialty: "Dermatologist",
-    experience: "9 years",
-    rating: "4.8",
-    description: "Expert for acne, eczema, and laser-based skin treatment plans.",
-    tags: ["Skin", "Clinic Visit", "Fast Booking"],
-    availableToday: true,
-  },
-  {
-    id: "doc-3",
-    doctorImage:"https://images.pexels.com/photos/4173251/pexels-photo-4173251.jpeg",
-    name: "Dr. Sophia Nguyen",
-    specialty: "Pediatrician",
-    experience: "10 years",
-    rating: "4.9",
-    description: "Child specialist focused on newborn care and vaccination programs.",
-    tags: ["Kids", "Friendly", "Evening Slot"],
-    availableToday: false,
-  },
-  {
-    id: "doc-4",
-    doctorImage:"https://images.pexels.com/photos/4173251/pexels-photo-4173251.jpeg",
-    name: "Dr. Ethan Brooks",
-    specialty: "Neurologist",
-    experience: "15 years",
-    rating: "4.7",
-    description: "Consultation for migraine, seizure disorders, and nerve pain care.",
-    tags: ["Neuro", "In Person", "Premium"],
-    availableToday: false,
-  },
-  {
-    id: "doc-5",
-    doctorImage:"https://images.pexels.com/photos/4173251/pexels-photo-4173251.jpeg",
-    name: "Dr. Mia Patel",
-    specialty: "Dentist",
-    experience: "8 years",
-    rating: "4.8",
-    description: "Dental cleanups, smile correction, and painless root canal treatment.",
-    tags: ["Dental", "Weekend", "Popular"],
-    availableToday: true,
-  },
-  {
-    id: "doc-6",
-    doctorImage:"https://images.pexels.com/photos/4173251/pexels-photo-4173251.jpeg",
-    name: "Dr. Lucas Hall",
-    specialty: "General Physician",
-    experience: "11 years",
-    rating: "4.6",
-    description: "Primary care for fever, infection, and routine annual health checks.",
-    tags: ["General", "Quick Consult", "Available"],
-    availableToday: true,
-  },
-];
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
-}
-
-function toDoctorCard(value: unknown): DoctorCard | null {
-  if (!isRecord(value)) return null;
-
-  const id = typeof value.id === "string" ? value.id.trim() : "";
-  const name = typeof value.name === "string" ? value.name.trim() : "";
-  const specialty = typeof value.specialty === "string" ? value.specialty.trim() : "";
-
-  if (!id || !name || !specialty) return null;
-
-  const doctorImage =
-    typeof value.doctorImage === "string" && value.doctorImage.trim()
-      ? value.doctorImage.trim()
-      : "https://images.pexels.com/photos/4173251/pexels-photo-4173251.jpeg";
-  const experience = typeof value.experience === "string" ? value.experience : "0 years";
-  const rating = typeof value.rating === "string" ? value.rating : "0";
-  const description =
-    typeof value.description === "string" && value.description.trim()
-      ? value.description
-      : `Specialist in ${specialty}.`;
-  const tags = Array.isArray(value.tags)
-    ? value.tags.filter((tag): tag is string => typeof tag === "string" && tag.trim().length > 0)
-    : [];
-  const availableToday = typeof value.availableToday === "boolean" ? value.availableToday : false;
-  const doctorEmail =
-    typeof value.doctorEmail === "string" && value.doctorEmail.trim() ? value.doctorEmail : undefined;
-
-  return {
-    id,
-    doctorImage,
-    name,
-    specialty,
-    experience,
-    rating,
-    description,
-    tags,
-    availableToday,
-    doctorEmail,
-  };
-}
-
-function getMergedDoctors(): DoctorCard[] {
-  if (typeof window === "undefined") return defaultDoctors;
-
-  const raw = window.localStorage.getItem("doctor_data");
-  if (!raw) return defaultDoctors;
-
-  try {
-    const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed)) return defaultDoctors;
-
-    const storedDoctors = parsed
-      .map((item) => toDoctorCard(item))
-      .filter((item): item is DoctorCard => item !== null);
-
-    if (!storedDoctors.length) return defaultDoctors;
-
-    const byKey = new Map<string, DoctorCard>();
-    [...defaultDoctors, ...storedDoctors].forEach((item) => {
-      const key = item.doctorEmail?.trim().toLowerCase() || item.id;
-      byKey.set(key, item);
-    });
-
-    return Array.from(byKey.values());
-  } catch {
-    return defaultDoctors;
-  }
-}
-
-let cachedDoctorRaw: string | null | undefined;
-let cachedDoctorSnapshot: DoctorCard[] = defaultDoctors;
-
-function getMergedDoctorsSnapshot(): DoctorCard[] {
-  if (typeof window === "undefined") return defaultDoctors;
-
-  const raw = window.localStorage.getItem("doctor_data");
-  if (raw === cachedDoctorRaw) return cachedDoctorSnapshot;
-
-  cachedDoctorRaw = raw;
-  cachedDoctorSnapshot = getMergedDoctors();
-  return cachedDoctorSnapshot;
-}
-
-const subscribeDoctors = () => () => undefined;
-const getServerDoctorsSnapshot = () => defaultDoctors;
-
 export default function DashboardScreen() {
   const navigate = useNavigate();
   const { setDoctor } = useDoctor();
   const [activeTag, setActiveTag] = useState<(typeof filterTags)[number]>("All");
-  const doctors = useSyncExternalStore(
-    subscribeDoctors,
-    getMergedDoctorsSnapshot,
-    getServerDoctorsSnapshot
-  );
+  const doctors = useDoctors()
+  console.log("doctordata",doctors)
   const getStars = (rating: string) => "\u2605".repeat(Math.round(Number(rating)));
 
   const filteredDoctors = useMemo(() => {
@@ -227,9 +67,9 @@ export default function DashboardScreen() {
         </div>
 
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
-          {filteredDoctors.map((doctor) => (
+          {filteredDoctors.map((doctor, index) => (
             <Card
-              key={doctor.doctorEmail?.trim().toLowerCase() || `${doctor.id}-${doctor.name}`}
+              key={`${doctor.id}-${index}`}
               className="overflow-hidden border border-slate-200 bg-white text-slate-900 shadow-sm"
             >
               <div className="relative h-44 w-full overflow-hidden">

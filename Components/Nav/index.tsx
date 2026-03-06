@@ -1,5 +1,5 @@
 "use client";
-
+import { setDoctorContextAndNavigate, useNavigate } from "@/utils";
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import Image from "next/image";
 import logo from "@/assets/img/logo.jpg";
@@ -10,9 +10,12 @@ import Button from "../ui/Button";
 import { isMockAuthenticated, logoutMockApi } from "@/services/mockAuthApi";
 import { usePathname, useRouter } from "next/navigation";
 import { useDoctorOptional } from "@/ContextApi/DoctorProfileContext";
+import { useDoctor } from "@/ContextApi/doctorContext";
+import { useDoctors } from "@/hooks/useDoctors";
 
 type DoctorCard = {
   id: string;
+  doctorImage:string;
   name: string;
   specialty: string;
   experience: string;
@@ -20,7 +23,10 @@ type DoctorCard = {
   description: string;
   tags: string[];
   availableToday: boolean;
+  doctorEmail?: string;
 };
+
+
 
 function isDoctorAvailableStatus(status: string | undefined) {
   const normalized = (status ?? "").trim().toLowerCase();
@@ -65,6 +71,8 @@ function getUserProfileInitialSnapshot() {
   }
 }
 
+
+
 export default function NavBar() {
   const [searchQuery, setSearchQuery] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -83,6 +91,7 @@ export default function NavBar() {
     () => isMockAuthenticated(),
     () => false
   );
+  const navigate = useNavigate();
   const userProfileInitial = useSyncExternalStore(
     subscribeAuthChanges,
     getUserProfileInitialSnapshot,
@@ -110,7 +119,7 @@ export default function NavBar() {
       const email = normalize(doctorContext.doctor.doctorEmail);
       const nextAvailableToday = isDoctorAvailableStatus(nextStatus);
 
-      const updated = parsed.map((item) => {
+      const updated = parsed.map((item: any) => {
         const itemName = normalize(item?.name);
         const itemSpecialty = normalize(item?.specialty);
         const itemEmail = normalize(item?.doctorEmail);
@@ -137,76 +146,9 @@ export default function NavBar() {
     doctorContext.updateDoctor({ status: nextStatus });
     syncDoctorAvailabilityInStorage(nextStatus);
   };
-
-  const doctors = useMemo<DoctorCard[]>(() => [
-    {
-      id: "doc-1",
-      name: "Dr. Amelia Clark",
-      specialty: "Cardiologist",
-      experience: "12 years",
-      rating: "4.9",
-      description:
-        "Specialist in heart rhythm disorders and preventive cardiac care.",
-      tags: ["Heart Care", "Online", "Top Rated"],
-      availableToday: true,
-    },
-    {
-      id: "doc-2",
-      name: "Dr. Noah Rivera",
-      specialty: "Dermatologist",
-      experience: "9 years",
-      rating: "4.8",
-      description:
-        "Expert for acne, eczema, and laser-based skin treatment plans.",
-      tags: ["Skin", "Clinic Visit", "Fast Booking"],
-      availableToday: true,
-    },
-    {
-      id: "doc-3",
-      name: "Dr. Sophia Nguyen",
-      specialty: "Pediatrician",
-      experience: "10 years",
-      rating: "4.9",
-      description:
-        "Child specialist focused on newborn care and vaccination programs.",
-      tags: ["Kids", "Friendly", "Evening Slot"],
-      availableToday: false,
-    },
-    {
-      id: "doc-4",
-      name: "Dr. Ethan Brooks",
-      specialty: "Neurologist",
-      experience: "15 years",
-      rating: "4.7",
-      description:
-        "Consultation for migraine, seizure disorders, and nerve pain care.",
-      tags: ["Neuro", "In Person", "Premium"],
-      availableToday: false,
-    },
-    {
-      id: "doc-5",
-      name: "Dr. Mia Patel",
-      specialty: "Dentist",
-      experience: "8 years",
-      rating: "4.8",
-      description:
-        "Dental cleanups, smile correction, and painless root canal treatment.",
-      tags: ["Dental", "Weekend", "Popular"],
-      availableToday: true,
-    },
-    {
-      id: "doc-6",
-      name: "Dr. Lucas Hall",
-      specialty: "General Physician",
-      experience: "11 years",
-      rating: "4.6",
-      description:
-        "Primary care for fever, infection, and routine annual health checks.",
-      tags: ["General", "Quick Consult", "Available"],
-      availableToday: true,
-    },
-  ], []);
-
+  const { setDoctor } = useDoctor();
+  const doctors = useDoctors()
+  
   const searchRecommendations = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
     if (!query) return [];
@@ -263,7 +205,7 @@ export default function NavBar() {
             className="rounded-full object-cover"
           />
           <p className="text-lg font-semibold tracking-tight text-black">
-            DoctorTube
+            DoctorCare
           </p>
         </div>
 
@@ -291,14 +233,15 @@ export default function NavBar() {
               {showSuggestions && searchQuery.trim().length > 0 && (
                 <div className="absolute left-0 right-0 top-[calc(100%+8px)] rounded-xl border border-slate-200 bg-white p-2 shadow-lg">
                   {searchRecommendations.length > 0 ? (
-                    <div className="space-y-1">
-                      {searchRecommendations.map((doctor) => (
+                    <div className="space-y-1 " >
+                    {searchRecommendations.map((doctor, index) => (
                         <button
-                          key={doctor.id}
+                          key={`${doctor.id}-${index}`}
                           type="button"
                           onMouseDown={() => {
                             setSearchQuery(doctor.name);
                             setShowSuggestions(false);
+                            setDoctorContextAndNavigate(doctor, "/home/dashBoard/DoctorDetail", setDoctor, navigate)
                           }}
                           className="w-full rounded-lg px-3 py-2 text-left hover:bg-slate-100 transition"
                         >

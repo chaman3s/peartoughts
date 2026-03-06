@@ -150,7 +150,7 @@ export default function SignUpForm() {
             {/* Sign Up Link */}
             <p className="text-center text-xs text-gray-600 animate-fadeInUp" style={{ animationDelay: "0.3s" }}>
               Already have an account?{" "}
-              <Link href="/" className="text-blue-600 hover:text-blue-700 font-semibold transition-colors">
+              <Link href="/login" className="text-blue-600 hover:text-blue-700 font-semibold transition-colors">
                 login
               </Link>
             </p>
