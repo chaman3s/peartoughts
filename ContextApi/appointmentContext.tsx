@@ -38,7 +38,7 @@ const initialAppointments: AppointmentItem[] = [
     dayLabel: "Today",
     time: "12:30 PM",
     paid: false,
-    status: "Upcoming",
+    status: "Completed",
   },
 ];
 

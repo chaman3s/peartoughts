@@ -505,7 +505,7 @@ export default function PrescriptionPage() {
       const adviceHtml =  `
         <div class="advice-item">
           <div class="medicine-content">
-            <p class="medicine-name">${escapeHtml(latestPrescription.notes??"")}</p>
+            <p class="medicine-name">${escapeHtml(latestPrescription.notes??"not drink too tea")}</p>
           </div>
         </div>
       `;
@@ -605,7 +605,7 @@ export default function PrescriptionPage() {
               color: #225da1;
             }
             .medicine-list { margin-top: 10px; padding-left: 8px; max-width: 94%; }
-            .medicine-item { display: flex; align-items: flex-start; gap: 8px; margin: 9px 0; }
+            .medicine-item { display: flex; align-items: flex-start; gap: 8px; margin: 9px 0; margin-top: 30px;}
             .advice-item { display: flex; align-items: flex-start; gap: 8px; margin: 9px 0;margin-left:30px }
             .medicine-index { width: 20px; font-size: 13px; color: #1e3a58; font-weight: 600; margin-left: 30px;}
             .medicine-content { flex: 1; }
@@ -629,7 +629,6 @@ export default function PrescriptionPage() {
               bottom: 210px;
               width: 240px;
               text-align: center;
-              bottom:-2pc
             }
             .signature-img, .stamp-img {
               display: block;
@@ -644,7 +643,7 @@ export default function PrescriptionPage() {
               position: absolute;
               left: 0;
               right: 0;
-              bottom: -2pc;
+              bottom: -1pc;
               background: #e7f2fb;
               border-top: 1px solid #d2e5f7;
               padding: 18px 40px;
@@ -701,7 +700,7 @@ export default function PrescriptionPage() {
               <p class="rx-text"><span class="rx-top">R</span><span class="rx-bottom">x</span></p>
               <div class="medicine-list">
                 ${medicinesHtml}
-                Advice:
+                Advice 
                  ${adviceHtml}
                 
               </div>
@@ -789,7 +788,7 @@ export default function PrescriptionPage() {
   ]);
 
   return (
-    <main className="min-h-screen bg-slate-100 p-4 md:p-6">
+    <main className="min-h-full bg-slate-100 p-4 md:p-6 scrollbar-hide">
       <section className="mx-auto max-w-5xl space-y-4 rounded-2xl border border-slate-200 bg-white p-6">
         <header className="flex flex-col gap-4 border-b border-slate-200 pb-5 md:flex-row md:items-start md:justify-between">
           <div>

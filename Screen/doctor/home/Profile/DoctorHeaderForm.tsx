@@ -87,7 +87,7 @@ export default function DoctorHeaderForm({ value, onSave, onCancel }: Props) {
   const existingTags = getSavedTagsByEmail(value.doctorEmail ?? "");
   const [form, setForm] = useState({
     status: value.status ?? "",
-    doctorName: `Dr. ${value.doctorName ?? ""}`,
+    doctorName: `${value.doctorName ?? ""}`,
     specialist: value.specialist ?? "",
     doctorDegree: value.doctorDegree ?? "",
     clinicName: value.clinicName ?? "",
