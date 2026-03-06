@@ -35,6 +35,7 @@ type PrescriptionStorageItem = {
   patientName?: string;
   patientEmail?: string;
   followUpDays?: number;
+  diagnosis: string
   notes?: string;
   medicines: PrescriptionMedicine[];
 };
@@ -171,11 +172,13 @@ function toPrescriptionStorageItem(value: unknown, index: number): PrescriptionS
     ? value.patientEmail.trim().toLowerCase()
     : undefined;
   const notes = typeof value.notes === "string" && value.notes.trim() ? value.notes.trim() : undefined;
+  const diagnosis = typeof value.diagnosis === "string" && value.diagnosis.trim() ? value.diagnosis.trim() : undefined;
 
   return {
     id,
     doctorName,
     doctorSpecialty,
+    diagnosis,
     issuedOn,
     patientName,
     patientEmail,
@@ -193,7 +196,8 @@ function getStorageSnapshot(): PrescriptionSnapshot {
   if (doctorsRaw === cachedDoctorsRaw && prescriptionsRaw === cachedPrescriptionsRaw) {
     return cachedSnapshot;
   }
-
+  console.log("p::",prescriptionsRaw);
+  console.log("d::",doctorsRaw);
   let doctors: DoctorStorageItem[] = [];
   let prescriptions: PrescriptionStorageItem[] = [];
 
@@ -404,6 +408,7 @@ export default function PrescriptionPage() {
   const { doctor } = useDoctor();
   const [downloadError, setDownloadError] = useState("");
   const snapshot = useSyncExternalStore(subscribeStorage, getStorageSnapshot, getServerSnapshot);
+  console.log("snap:",snapshot);
   const currentUserProfile = useSyncExternalStore(
     subscribeStorage,
     getCurrentUserProfileSnapshot,
@@ -437,7 +442,7 @@ export default function PrescriptionPage() {
 
     return doctorMatched[0] ?? userMatched[0] ?? null;
   }, [currentUserEmail, doctor.doctorName, doctor.specialist, snapshot.prescriptions]);
-
+  console.log("latestPrescription:",latestPrescription);
   const doctorLine = latestPrescription
     ? `${latestPrescription.doctorName} | ${latestPrescription.doctorSpecialty}`
     : doctor.doctorName || snapshot.doctors[0]?.name || "Doctor";
@@ -484,9 +489,9 @@ export default function PrescriptionPage() {
         ? `${instruction} for ${durationPart}`
         : instruction || durationPart || "";
       const finalMedicineLine = isParacetamol
-        ? "Paracetamol 500 mg – 1 tab BD for 5 days"
-        : `${medicineName}${fullLine ? ` – ${fullLine}` : ""}`;
-
+        ? "Paracetamol 500 mg 1 tab BD for 5 days"
+        : `${medicineName}${fullLine ? ` ${fullLine}` : ""}`;
+     
       return `
         <div class="medicine-item">
           <div class="medicine-index">${index + 1}.</div>
@@ -497,9 +502,16 @@ export default function PrescriptionPage() {
         </div>
       `;
     }).join("");
+      const adviceHtml =  `
+        <div class="advice-item">
+          <div class="medicine-content">
+            <p class="medicine-name">${escapeHtml(latestPrescription.notes)}</p>
+          </div>
+        </div>
+      `;
 
-    const notesHtml = latestPrescription.notes
-      ? `<p class="line-field"><span class="label">Diagnosis:</span> <span class="value">${escapeHtml(latestPrescription.notes)}</span></p>`
+    const notesHtml = latestPrescription.diagnosis
+      ? `<p class="line-field"><span class="label">Diagnosis:</span> <span class="value">${escapeHtml(latestPrescription.diagnosis)}</span></p>`
       : `<p class="line-field"><span class="label">Diagnosis:</span> <span class="value">&nbsp;</span></p>`;
 
     const followUpHtml = latestPrescription.followUpDays
@@ -540,7 +552,7 @@ export default function PrescriptionPage() {
             body { font-family: "Segoe UI", Arial, sans-serif; margin: 0; padding: 36px; color: #0f172a; background: #3e79b9; }
             .sheet {
               width: 100%;
-              max-width: 850px;
+              max-width: 100%;
               min-height: 1170px;
               margin: 0 auto;
               background: #ffffff;
@@ -594,7 +606,8 @@ export default function PrescriptionPage() {
             }
             .medicine-list { margin-top: 10px; padding-left: 8px; max-width: 94%; }
             .medicine-item { display: flex; align-items: flex-start; gap: 8px; margin: 9px 0; }
-            .medicine-index { width: 20px; font-size: 13px; color: #1e3a58; font-weight: 600; }
+            .advice-item { display: flex; align-items: flex-start; gap: 8px; margin: 9px 0;margin-left:30px }
+            .medicine-index { width: 20px; font-size: 13px; color: #1e3a58; font-weight: 600; margin-left: 30px;}
             .medicine-content { flex: 1; }
             .medicine-name { margin: 0; font-size: 14px; font-weight: 600; color: #10273f; }
             .medicine-meta { margin: 2px 0 0; font-size: 12px; color: #3a5d80; }
@@ -616,6 +629,7 @@ export default function PrescriptionPage() {
               bottom: 210px;
               width: 240px;
               text-align: center;
+              bottom:-2pc
             }
             .signature-img, .stamp-img {
               display: block;
@@ -630,7 +644,7 @@ export default function PrescriptionPage() {
               position: absolute;
               left: 0;
               right: 0;
-              bottom: 0;
+              bottom: -2pc;
               background: #e7f2fb;
               border-top: 1px solid #d2e5f7;
               padding: 18px 40px;
@@ -687,7 +701,9 @@ export default function PrescriptionPage() {
               <p class="rx-text"><span class="rx-top">R</span><span class="rx-bottom">x</span></p>
               <div class="medicine-list">
                 ${medicinesHtml}
-                ${followUpHtml}
+                Advice:
+                 ${adviceHtml}
+                
               </div>
 
               <div class="signature-block">

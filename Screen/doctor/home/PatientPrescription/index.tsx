@@ -30,6 +30,7 @@ type SavedPrescription = {
   patientEmail?: string;
   followUpDays?: number;
   notes?: string;
+  diagnosis: string
   medicines: Array<{
     id: string;
     medicine: string;
@@ -363,8 +364,9 @@ export default function DoctorPatientPrescription() {
       issuedOn: new Date().toISOString(),
       patientName: patientName.trim() || undefined,
       patientEmail: normalizedPatientEmail,
+      diagnosis: diagnosis.trim(),
       followUpDays: Number(followUpDays) > 0 ? Number(followUpDays) : undefined,
-      notes: diagnosis.trim() || notes.trim() || undefined,
+      notes: notes.trim() || undefined,
       medicines: finalMedicines,
     };
 
@@ -653,7 +655,7 @@ export default function DoctorPatientPrescription() {
 
                 <div className="rounded-2xl border border-slate-200 bg-white p-4">
                   <label className="block space-y-1.5">
-                    <span className="text-sm font-medium text-slate-700">General Notes</span>
+                    <span className="text-sm font-medium text-slate-700">Advice</span>
                     <textarea
                       value={notes}
                       onChange={(event) => setNotes(event.target.value)}
